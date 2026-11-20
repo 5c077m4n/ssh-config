@@ -4,12 +4,12 @@ package clientconfig
 import (
 	"bufio"
 	"bytes"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/5c077m4n/ssh-config/internal/keywords"
+	"github.com/5c077m4n/ssh-config/internal/utils"
 )
 
 type (
@@ -56,10 +56,7 @@ type (
 		VerifyHostKeyDNS             string
 		VisualHostKey                *bool
 	}
-	Item struct {
-		Raw   string
-		Field string
-	}
+	Item  = utils.Item
 	Block struct {
 		Patterns []string
 		Match    bool
@@ -114,26 +111,6 @@ var clientKeysOrdered = []ClientKey{
 	"User",
 	"VerifyHostKeyDNS",
 	"VisualHostKey",
-}
-
-var ErrNotFound = errors.New("key not found")
-
-func yesno(b bool) string {
-	if b {
-		return "yes"
-	}
-	return "no"
-}
-
-func (o *ClientOptions) Set(key, value string) error {
-	canon, ok := keywords.Canonical(keywords.Client, key)
-	if !ok {
-		return fmt.Errorf("unknown key %q", key)
-	}
-	if err := keywords.Validate(keywords.Client, key, value); err != nil {
-		return err
-	}
-	return o.setField(canon, value)
 }
 
 func (o *ClientOptions) setField(canon, value string) error {
@@ -256,132 +233,107 @@ func (o *ClientOptions) setField(canon, value string) error {
 	return nil
 }
 
+func (o *ClientOptions) Set(key, value string) error {
+	canon, ok := keywords.Canonical(keywords.Client, key)
+	if !ok {
+		return fmt.Errorf("unknown key %q", key)
+	}
+	if err := keywords.Validate(keywords.Client, key, value); err != nil {
+		return err
+	}
+	return o.setField(canon, value)
+}
+
 func (o *ClientOptions) field(canon string) (string, bool) {
 	if o == nil {
 		return "", false
 	}
 	switch canon {
 	case "AddKeysToAgent":
-		return nonEmpty(o.AddKeysToAgent)
+		return utils.NonEmpty(o.AddKeysToAgent)
 	case "AddressFamily":
-		return nonEmpty(o.AddressFamily)
+		return utils.NonEmpty(o.AddressFamily)
 	case "BatchMode":
-		return boolField(o.BatchMode)
+		return utils.BoolField(o.BatchMode)
 	case "BindAddress":
-		return nonEmpty(o.BindAddress)
+		return utils.NonEmpty(o.BindAddress)
 	case "BindInterface":
-		return nonEmpty(o.BindInterface)
+		return utils.NonEmpty(o.BindInterface)
 	case "CanonicalizeFallbackLocal":
-		return boolField(o.CanonicalizeFallbackLocal)
+		return utils.BoolField(o.CanonicalizeFallbackLocal)
 	case "CanonicalizeHostname":
-		return nonEmpty(o.CanonicalizeHostname)
+		return utils.NonEmpty(o.CanonicalizeHostname)
 	case "CheckHostIP":
-		return boolField(o.CheckHostIP)
+		return utils.BoolField(o.CheckHostIP)
 	case "Compression":
-		return boolField(o.Compression)
+		return utils.BoolField(o.Compression)
 	case "ConnectTimeout":
-		return uintField(o.ConnectTimeout)
+		return utils.UintField(o.ConnectTimeout)
 	case "ControlMaster":
-		return nonEmpty(o.ControlMaster)
+		return utils.NonEmpty(o.ControlMaster)
 	case "ControlPath":
-		return nonEmpty(o.ControlPath)
+		return utils.NonEmpty(o.ControlPath)
 	case "ForwardAgent":
-		return boolField(o.ForwardAgent)
+		return utils.BoolField(o.ForwardAgent)
 	case "ForwardX11":
-		return boolField(o.ForwardX11)
+		return utils.BoolField(o.ForwardX11)
 	case "ForwardX11Trusted":
-		return boolField(o.ForwardX11Trusted)
+		return utils.BoolField(o.ForwardX11Trusted)
 	case "HostKeyAlias":
-		return nonEmpty(o.HostKeyAlias)
+		return utils.NonEmpty(o.HostKeyAlias)
 	case "HostName":
-		return nonEmpty(o.HostName)
+		return utils.NonEmpty(o.HostName)
 	case "IdentitiesOnly":
-		return boolField(o.IdentitiesOnly)
+		return utils.BoolField(o.IdentitiesOnly)
 	case "IdentityAgent":
-		return nonEmpty(o.IdentityAgent)
+		return utils.NonEmpty(o.IdentityAgent)
 	case "IdentityFile":
-		return nonEmpty(o.IdentityFile)
+		return utils.NonEmpty(o.IdentityFile)
 	case "KbdInteractiveAuthentication":
-		return boolField(o.KbdInteractiveAuthentication)
+		return utils.BoolField(o.KbdInteractiveAuthentication)
 	case "LocalForward":
-		return nonEmpty(o.LocalForward)
+		return utils.NonEmpty(o.LocalForward)
 	case "LogLevel":
-		return nonEmpty(o.LogLevel)
+		return utils.NonEmpty(o.LogLevel)
 	case "PasswordAuthentication":
-		return boolField(o.PasswordAuthentication)
+		return utils.BoolField(o.PasswordAuthentication)
 	case "Port":
-		return uintField(o.Port)
+		return utils.UintField(o.Port)
 	case "PreferredAuthentications":
-		return nonEmpty(o.PreferredAuthentications)
+		return utils.NonEmpty(o.PreferredAuthentications)
 	case "ProxyCommand":
-		return nonEmpty(o.ProxyCommand)
+		return utils.NonEmpty(o.ProxyCommand)
 	case "ProxyJump":
-		return nonEmpty(o.ProxyJump)
+		return utils.NonEmpty(o.ProxyJump)
 	case "PubkeyAuthentication":
-		return boolField(o.PubkeyAuthentication)
+		return utils.BoolField(o.PubkeyAuthentication)
 	case "RemoteForward":
-		return nonEmpty(o.RemoteForward)
+		return utils.NonEmpty(o.RemoteForward)
 	case "SendEnv":
-		return nonEmpty(o.SendEnv)
+		return utils.NonEmpty(o.SendEnv)
 	case "ServerAliveCountMax":
-		return uintField(o.ServerAliveCountMax)
+		return utils.UintField(o.ServerAliveCountMax)
 	case "ServerAliveInterval":
-		return uintField(o.ServerAliveInterval)
+		return utils.UintField(o.ServerAliveInterval)
 	case "SetEnv":
-		return nonEmpty(o.SetEnv)
+		return utils.NonEmpty(o.SetEnv)
 	case "StrictHostKeyChecking":
-		return nonEmpty(o.StrictHostKeyChecking)
+		return utils.NonEmpty(o.StrictHostKeyChecking)
 	case "TCPKeepAlive":
-		return boolField(o.TCPKeepAlive)
+		return utils.BoolField(o.TCPKeepAlive)
 	case "Tunnel":
-		return nonEmpty(o.Tunnel)
+		return utils.NonEmpty(o.Tunnel)
 	case "UpdateHostKeys":
-		return boolField(o.UpdateHostKeys)
+		return utils.BoolField(o.UpdateHostKeys)
 	case "User":
-		return nonEmpty(o.User)
+		return utils.NonEmpty(o.User)
 	case "VerifyHostKeyDNS":
-		return nonEmpty(o.VerifyHostKeyDNS)
+		return utils.NonEmpty(o.VerifyHostKeyDNS)
 	case "VisualHostKey":
-		return boolField(o.VisualHostKey)
+		return utils.BoolField(o.VisualHostKey)
 	default:
 		return "", false
 	}
-}
-
-func nonEmpty(s string) (string, bool) {
-	return s, s != ""
-}
-
-func boolField(b *bool) (string, bool) {
-	if b == nil {
-		return "", false
-	}
-	return yesno(*b), true
-}
-
-func uintField(n *uint64) (string, bool) {
-	if n == nil {
-		return "", false
-	}
-	return strconv.FormatUint(*n, 10), true
-}
-
-func splitLine(line string) (string, string) {
-	i := strings.IndexAny(line, " \t=")
-	if i < 0 {
-		return line, ""
-	}
-	value := strings.Trim(strings.TrimSpace(line[i+1:]), `"'`)
-	return line[:i], value
-}
-
-func commentKey(raw string) string {
-	trimmed := strings.TrimSpace(raw)
-	if !strings.HasPrefix(trimmed, "#") {
-		return ""
-	}
-	key, _ := splitLine(strings.TrimSpace(trimmed[1:]))
-	return key
 }
 
 func containsPattern(patterns []string, target string) bool {
@@ -482,22 +434,7 @@ func (f *File) Get(target, key string) (string, error) {
 			}
 		}
 	}
-	return "", fmt.Errorf("%w: %s in %s", ErrNotFound, canon, target)
-}
-
-// Set applies every option configured on opts to the block matching
-// target. Missing blocks are created.
-func (f *File) Set(target string, opts *ClientOptions) error {
-	for _, canon := range clientKeysOrdered {
-		value, ok := opts.field(string(canon))
-		if !ok {
-			continue
-		}
-		if err := f.setOption(target, string(canon), value); err != nil {
-			return err
-		}
-	}
-	return nil
+	return "", fmt.Errorf("%w: %s in %s", utils.ErrNotFound, canon, target)
 }
 
 func (f *File) setOption(target, canon, value string) error {
@@ -516,7 +453,7 @@ func (f *File) setOption(target, canon, value string) error {
 			}
 		}
 		for ii := range blk.Items {
-			if commentKey(blk.Items[ii].Raw) == canon {
+			if utils.CommentKey(blk.Items[ii].Raw) == canon {
 				blk.Items[ii] = Item{Field: canon}
 				return nil
 			}
@@ -539,6 +476,21 @@ func (f *File) setOption(target, canon, value string) error {
 	return nil
 }
 
+// Set applies every option configured on opts to the block matching
+// target. Missing blocks are created.
+func (f *File) Set(target string, opts *ClientOptions) error {
+	for _, canon := range clientKeysOrdered {
+		value, ok := opts.field(string(canon))
+		if !ok {
+			continue
+		}
+		if err := f.setOption(target, string(canon), value); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func Parse(data []byte) *File {
 	f := &File{Blocks: []Block{{}}}
 	sc := bufio.NewScanner(bytes.NewReader(data))
@@ -550,7 +502,7 @@ func Parse(data []byte) *File {
 			blk.Items = append(blk.Items, Item{Raw: raw})
 			continue
 		}
-		key, value := splitLine(trimmed)
+		key, value := utils.SplitLine(trimmed)
 		switch strings.ToLower(key) {
 		case "host":
 			f.Blocks = append(

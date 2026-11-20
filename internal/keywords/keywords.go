@@ -15,6 +15,11 @@ type (
 	SpecMap = map[string]Spec
 )
 
+func lookup(table SpecMap, key string) (Spec, bool) {
+	spec, ok := table[strings.ToLower(strings.TrimSpace(key))]
+	return spec, ok
+}
+
 func Canonical(table SpecMap, key string) (string, bool) {
 	if spec, ok := lookup(table, key); ok {
 		return spec.KeywordName(), true
@@ -28,11 +33,6 @@ func Validate(table SpecMap, key, value string) error {
 		return fmt.Errorf("unknown key %q", key)
 	}
 	return spec.Validate(value)
-}
-
-func lookup(table SpecMap, key string) (Spec, bool) {
-	spec, ok := table[strings.ToLower(strings.TrimSpace(key))]
-	return spec, ok
 }
 
 type typed[T any] struct {

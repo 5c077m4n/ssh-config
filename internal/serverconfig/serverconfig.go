@@ -4,12 +4,12 @@ package serverconfig
 import (
 	"bufio"
 	"bytes"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/5c077m4n/ssh-config/internal/keywords"
+	"github.com/5c077m4n/ssh-config/internal/utils"
 )
 
 type (
@@ -47,10 +47,7 @@ type (
 		X11DisplayOffset             *uint64
 		X11Forwarding                *bool
 	}
-	Item struct {
-		Raw   string
-		Field string
-	}
+	Item = utils.Item
 	File struct {
 		Items   []Item
 		Options *ServerOptions
@@ -91,26 +88,6 @@ var serverKeysOrdered = []ServerKey{
 	"UseDNS",
 	"X11DisplayOffset",
 	"X11Forwarding",
-}
-
-var ErrNotFound = errors.New("key not found")
-
-func yesno(b bool) string {
-	if b {
-		return "yes"
-	}
-	return "no"
-}
-
-func (o *ServerOptions) Set(key, value string) error {
-	canon, ok := keywords.Canonical(keywords.SSHD, key)
-	if !ok {
-		return fmt.Errorf("unknown key %q", key)
-	}
-	if err := keywords.Validate(keywords.SSHD, key, value); err != nil {
-		return err
-	}
-	return o.setField(canon, value)
 }
 
 func (o *ServerOptions) setField(canon, value string) error {
@@ -219,114 +196,89 @@ func (o *ServerOptions) setField(canon, value string) error {
 	return nil
 }
 
+func (o *ServerOptions) Set(key, value string) error {
+	canon, ok := keywords.Canonical(keywords.SSHD, key)
+	if !ok {
+		return fmt.Errorf("unknown key %q", key)
+	}
+	if err := keywords.Validate(keywords.SSHD, key, value); err != nil {
+		return err
+	}
+	return o.setField(canon, value)
+}
+
 func (o *ServerOptions) field(canon string) (string, bool) {
 	if o == nil {
 		return "", false
 	}
 	switch canon {
 	case "AcceptEnv":
-		return nonEmpty(o.AcceptEnv)
+		return utils.NonEmpty(o.AcceptEnv)
 	case "AddressFamily":
-		return nonEmpty(o.AddressFamily)
+		return utils.NonEmpty(o.AddressFamily)
 	case "AllowAgentForwarding":
-		return boolField(o.AllowAgentForwarding)
+		return utils.BoolField(o.AllowAgentForwarding)
 	case "AllowGroups":
-		return nonEmpty(o.AllowGroups)
+		return utils.NonEmpty(o.AllowGroups)
 	case "AllowTCPForwarding":
-		return nonEmpty(o.AllowTCPForwarding)
+		return utils.NonEmpty(o.AllowTCPForwarding)
 	case "AllowUsers":
-		return nonEmpty(o.AllowUsers)
+		return utils.NonEmpty(o.AllowUsers)
 	case "Banner":
-		return nonEmpty(o.Banner)
+		return utils.NonEmpty(o.Banner)
 	case "ClientAliveCountMax":
-		return uintField(o.ClientAliveCountMax)
+		return utils.UintField(o.ClientAliveCountMax)
 	case "ClientAliveInterval":
-		return uintField(o.ClientAliveInterval)
+		return utils.UintField(o.ClientAliveInterval)
 	case "Compression":
-		return nonEmpty(o.Compression)
+		return utils.NonEmpty(o.Compression)
 	case "DenyGroups":
-		return nonEmpty(o.DenyGroups)
+		return utils.NonEmpty(o.DenyGroups)
 	case "DenyUsers":
-		return nonEmpty(o.DenyUsers)
+		return utils.NonEmpty(o.DenyUsers)
 	case "GSSAPIAuthentication":
-		return boolField(o.GSSAPIAuthentication)
+		return utils.BoolField(o.GSSAPIAuthentication)
 	case "HostKey":
-		return nonEmpty(o.HostKey)
+		return utils.NonEmpty(o.HostKey)
 	case "KbdInteractiveAuthentication":
-		return boolField(o.KbdInteractiveAuthentication)
+		return utils.BoolField(o.KbdInteractiveAuthentication)
 	case "ListenAddress":
-		return nonEmpty(o.ListenAddress)
+		return utils.NonEmpty(o.ListenAddress)
 	case "LogLevel":
-		return nonEmpty(o.LogLevel)
+		return utils.NonEmpty(o.LogLevel)
 	case "MaxAuthTries":
-		return uintField(o.MaxAuthTries)
+		return utils.UintField(o.MaxAuthTries)
 	case "MaxSessions":
-		return uintField(o.MaxSessions)
+		return utils.UintField(o.MaxSessions)
 	case "PasswordAuthentication":
-		return boolField(o.PasswordAuthentication)
+		return utils.BoolField(o.PasswordAuthentication)
 	case "PermitEmptyPasswords":
-		return boolField(o.PermitEmptyPasswords)
+		return utils.BoolField(o.PermitEmptyPasswords)
 	case "PermitRootLogin":
-		return nonEmpty(o.PermitRootLogin)
+		return utils.NonEmpty(o.PermitRootLogin)
 	case "PermitTunnel":
-		return nonEmpty(o.PermitTunnel)
+		return utils.NonEmpty(o.PermitTunnel)
 	case "Port":
-		return uintField(o.Port)
+		return utils.UintField(o.Port)
 	case "PubkeyAuthentication":
-		return boolField(o.PubkeyAuthentication)
+		return utils.BoolField(o.PubkeyAuthentication)
 	case "StrictModes":
-		return boolField(o.StrictModes)
+		return utils.BoolField(o.StrictModes)
 	case "Subsystem":
-		return nonEmpty(o.Subsystem)
+		return utils.NonEmpty(o.Subsystem)
 	case "SyslogFacility":
-		return nonEmpty(o.SyslogFacility)
+		return utils.NonEmpty(o.SyslogFacility)
 	case "TCPKeepAlive":
-		return boolField(o.TCPKeepAlive)
+		return utils.BoolField(o.TCPKeepAlive)
 	case "UseDNS":
-		return boolField(o.UseDNS)
+		return utils.BoolField(o.UseDNS)
 	case "X11DisplayOffset":
-		return uintField(o.X11DisplayOffset)
+		return utils.UintField(o.X11DisplayOffset)
 	case "X11Forwarding":
-		return boolField(o.X11Forwarding)
+		return utils.BoolField(o.X11Forwarding)
 	default:
 		return "", false
 	}
-}
-
-func nonEmpty(s string) (string, bool) {
-	return s, s != ""
-}
-
-func boolField(b *bool) (string, bool) {
-	if b == nil {
-		return "", false
-	}
-	return yesno(*b), true
-}
-
-func uintField(n *uint64) (string, bool) {
-	if n == nil {
-		return "", false
-	}
-	return strconv.FormatUint(*n, 10), true
-}
-
-func splitLine(line string) (string, string) {
-	i := strings.IndexAny(line, " \t=")
-	if i < 0 {
-		return line, ""
-	}
-	value := strings.Trim(strings.TrimSpace(line[i+1:]), `"'`)
-	return line[:i], value
-}
-
-func commentKey(raw string) string {
-	trimmed := strings.TrimSpace(raw)
-	if !strings.HasPrefix(trimmed, "#") {
-		return ""
-	}
-	key, _ := splitLine(strings.TrimSpace(trimmed[1:]))
-	return key
 }
 
 func (f *File) mainEnd() int {
@@ -370,7 +322,32 @@ func (f *File) Get(key string) (string, error) {
 			}
 		}
 	}
-	return "", fmt.Errorf("%w: %s", ErrNotFound, canon)
+	return "", fmt.Errorf("%w: %s", utils.ErrNotFound, canon)
+}
+
+func (f *File) setOption(canon, value string) error {
+	if f.Options == nil {
+		f.Options = &ServerOptions{}
+	}
+	if err := f.Options.setField(canon, value); err != nil {
+		return err
+	}
+	end := f.mainEnd()
+	for i := range f.Items[:end] {
+		if f.Items[i].Field == canon {
+			return nil
+		}
+	}
+	for i := range f.Items[:end] {
+		if utils.CommentKey(f.Items[i].Raw) == canon {
+			f.Items[i] = Item{Field: canon}
+			return nil
+		}
+	}
+	entry := Item{Field: canon}
+	f.Items = append(f.Items[:end], append([]Item{entry}, f.Items[end:]...)...)
+
+	return nil
 }
 
 // Set applies every option configured on opts to the main (pre-Match)
@@ -388,31 +365,6 @@ func (f *File) Set(opts *ServerOptions) error {
 	return nil
 }
 
-func (f *File) setOption(canon, value string) error {
-	if f.Options == nil {
-		f.Options = &ServerOptions{}
-	}
-	if err := f.Options.setField(canon, value); err != nil {
-		return err
-	}
-	end := f.mainEnd()
-	for i := range f.Items[:end] {
-		if f.Items[i].Field == canon {
-			return nil
-		}
-	}
-	for i := range f.Items[:end] {
-		if commentKey(f.Items[i].Raw) == canon {
-			f.Items[i] = Item{Field: canon}
-			return nil
-		}
-	}
-	entry := Item{Field: canon}
-	f.Items = append(f.Items[:end], append([]Item{entry}, f.Items[end:]...)...)
-
-	return nil
-}
-
 func Parse(data []byte) *File {
 	f := &File{}
 	sc := bufio.NewScanner(bytes.NewReader(data))
@@ -423,7 +375,7 @@ func Parse(data []byte) *File {
 			f.Items = append(f.Items, Item{Raw: raw})
 			continue
 		}
-		key, value := splitLine(trimmed)
+		key, value := utils.SplitLine(trimmed)
 		if strings.EqualFold(key, "match") {
 			f.Items = append(f.Items, Item{Raw: raw})
 			continue
