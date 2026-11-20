@@ -20,6 +20,7 @@ type (
 		AllowGroups                  string
 		AllowTCPForwarding           string
 		AllowUsers                   string
+		AuthorizedKeysFile           string
 		Banner                       string
 		ClientAliveCountMax          *uint64
 		ClientAliveInterval          *uint64
@@ -71,6 +72,8 @@ func (o *ServerOptions) setField(canon, value string) error {
 		o.AllowTCPForwarding = value
 	case "AllowUsers":
 		o.AllowUsers = value
+	case "AuthorizedKeysFile":
+		o.AuthorizedKeysFile = value
 	case "Banner":
 		o.Banner = value
 	case "ClientAliveCountMax":
@@ -162,12 +165,12 @@ func (o *ServerOptions) setField(canon, value string) error {
 	return nil
 }
 
-func (o *ServerOptions) Set(key, value string) error {
+func (o *ServerOptions) Set(key, value, base string) error {
 	canon, ok := keywords.Canonical(keywords.SSHD, key)
 	if !ok {
 		return fmt.Errorf("unknown key %q", key)
 	}
-	if err := keywords.Validate(keywords.SSHD, key, value); err != nil {
+	if err := keywords.Validate(keywords.SSHD, key, value, base); err != nil {
 		return err
 	}
 	return o.setField(canon, value)
@@ -190,6 +193,8 @@ func (o *ServerOptions) field(canon string) (string, bool) {
 		return utils.NonEmpty(o.AllowTCPForwarding)
 	case "AllowUsers":
 		return utils.NonEmpty(o.AllowUsers)
+	case "AuthorizedKeysFile":
+		return utils.NonEmpty(o.AuthorizedKeysFile)
 	case "Banner":
 		return utils.NonEmpty(o.Banner)
 	case "ClientAliveCountMax":

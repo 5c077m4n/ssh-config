@@ -17,7 +17,7 @@ Match group admins
 func opts(t *testing.T, key, value string) *ServerOptions {
 	t.Helper()
 	o := &ServerOptions{}
-	require.NoError(t, o.Set(key, value))
+	require.NoError(t, o.Set(key, value, ""))
 	return o
 }
 
@@ -79,8 +79,8 @@ func TestSetMultipleOptions(t *testing.T) {
 	f := Parse([]byte(sample))
 
 	o := &ServerOptions{}
-	require.NoError(t, o.Set("x11forwarding", "yes"))
-	require.NoError(t, o.Set("maxauthtries", "4"))
+	require.NoError(t, o.Set("x11forwarding", "yes", ""))
+	require.NoError(t, o.Set("maxauthtries", "4", ""))
 	require.NoError(t, f.Set(o))
 
 	out := string(f.Serialize())
@@ -91,7 +91,7 @@ func TestSetMultipleOptions(t *testing.T) {
 func TestSetValidatesBeforeAction(t *testing.T) {
 	f := Parse([]byte(sample))
 
-	require.Error(t, (&ServerOptions{}).Set("permitrootlogin", "maybe"))
-	require.Error(t, (&ServerOptions{}).Set("bogus", "yes"))
+	require.Error(t, (&ServerOptions{}).Set("permitrootlogin", "maybe", ""))
+	require.Error(t, (&ServerOptions{}).Set("bogus", "yes", ""))
 	require.Contains(t, string(f.Serialize()), "PermitRootLogin prohibit-password")
 }

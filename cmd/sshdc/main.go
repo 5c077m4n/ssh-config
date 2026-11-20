@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/5c077m4n/ssh-config/internal/keywords"
 	"github.com/5c077m4n/ssh-config/internal/serverconfig"
@@ -72,7 +73,7 @@ func run(args []string) int {
 	}
 	if len(args) == 2 {
 		opts := &serverconfig.ServerOptions{}
-		if err := opts.Set(key, args[1]); err != nil {
+		if err := opts.Set(key, args[1], filepath.Dir(*configPath)); err != nil {
 			fmt.Fprintln(os.Stderr, "sshdc:", err)
 			return 1
 		}

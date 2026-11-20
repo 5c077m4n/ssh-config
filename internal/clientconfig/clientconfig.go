@@ -195,7 +195,7 @@ func (o *ClientOptions) Set(key, value string) error {
 	if !ok {
 		return fmt.Errorf("unknown key %q", key)
 	}
-	if err := keywords.Validate(keywords.Client, key, value); err != nil {
+	if err := keywords.Validate(keywords.Client, key, value, ""); err != nil {
 		return err
 	}
 	return o.setField(canon, value)

@@ -92,7 +92,12 @@ Every getter and setter is validated before the config file is read or written:
 
 - Keys must be known SSH keywords (case-insensitive; unknown keys are rejected).
 - Values are type-checked against the key's kind: `yes`/`no` booleans, enum
-  membership, positive integers, or non-empty strings.
+  membership, positive integers, non-empty strings, or paths: path-valued
+  keys (`AuthorizedKeysFile`, `Banner`, `HostKey`) accept non-empty values, but
+  every token-free path in the value must exist: absolute paths are stat-ed
+  directly and relative paths are joined with the server config's directory
+  (via `sshdc`). `%`-tokens and the special value `none` are skipped — they are
+  resolved by `sshd` at runtime.
 
 ## Behavior notes
 

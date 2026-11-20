@@ -3,6 +3,8 @@ package keywords
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -12,6 +14,7 @@ type (
 	Spec interface {
 		KeywordName() string
 		Validate(value string) error
+		ValidateIn(base, value string) error
 	}
 	SpecMap = map[string]Spec
 )
@@ -37,17 +40,17 @@ func Names(table SpecMap) []string {
 	return names
 }
 
-func Validate(table SpecMap, key, value string) error {
+func Validate(table SpecMap, key, value, base string) error {
 	spec, ok := lookup(table, key)
 	if !ok {
 		return fmt.Errorf("unknown key %q", key)
 	}
-	return spec.Validate(value)
+	return spec.ValidateIn(base, value)
 }
 
 type typed[T any] struct {
 	name  string
-	parse func(string) (T, error)
+	parse func(base, value string) (T, error)
 }
 
 func (s typed[T]) KeywordName() string {
@@ -55,14 +58,19 @@ func (s typed[T]) KeywordName() string {
 }
 
 func (s typed[T]) Validate(value string) error {
-	_, err := s.parse(value)
+	_, err := s.parse("", value)
+	return err
+}
+
+func (s typed[T]) ValidateIn(base, value string) error {
+	_, err := s.parse(base, value)
 	return err
 }
 
 func Bool(name string) Spec {
 	return typed[bool]{
 		name: name,
-		parse: func(value string) (bool, error) {
+		parse: func(_, value string) (bool, error) {
 			if strings.EqualFold(value, "yes") {
 				return true, nil
 			}
@@ -77,7 +85,7 @@ func Bool(name string) Spec {
 func Uint(name string) Spec {
 	return typed[uint64]{
 		name: name,
-		parse: func(value string) (uint64, error) {
+		parse: func(_, value string) (uint64, error) {
 			n, err := strconv.ParseUint(value, 10, 64)
 			if err != nil || n < 1 {
 				return 0, fmt.Errorf("value %q for %s must be a positive integer", value, name)
@@ -90,9 +98,45 @@ func Uint(name string) Spec {
 func Str(name string) Spec {
 	return typed[string]{
 		name: name,
-		parse: func(value string) (string, error) {
+		parse: func(_, value string) (string, error) {
 			if strings.TrimSpace(value) == "" {
 				return "", fmt.Errorf("value for %s must not be empty", name)
+			}
+			return value, nil
+		},
+	}
+}
+
+func Path(name string) Spec {
+	return typed[string]{
+		name: name,
+		parse: func(base, value string) (string, error) {
+			if strings.TrimSpace(value) == "" {
+				return "", fmt.Errorf("value for %s must not be empty", name)
+			}
+			for p := range strings.FieldsSeq(value) {
+				if strings.ContainsRune(p, '%') {
+					// sshd expands % tokens at runtime; not statable here.
+					continue
+				}
+				if !filepath.IsAbs(p) {
+					if base == "" {
+						// No config location to resolve against; skip.
+						continue
+					}
+					if strings.EqualFold(p, "none") {
+						// Banner uses "none" to disable the banner; not a path.
+						continue
+					}
+					p = filepath.Join(base, p)
+				}
+				if _, err := os.Stat(p); err != nil {
+					return "", fmt.Errorf(
+						"value %q for %s: path does not exist",
+						value,
+						name,
+					)
+				}
 			}
 			return value, nil
 		},
@@ -102,7 +146,7 @@ func Str(name string) Spec {
 func Enum(name string, allowed []string) Spec {
 	return typed[string]{
 		name: name,
-		parse: func(value string) (string, error) {
+		parse: func(_, value string) (string, error) {
 			for _, a := range allowed {
 				if strings.EqualFold(value, a) {
 					return value, nil
