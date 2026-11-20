@@ -115,17 +115,12 @@ func Path(name string) Spec {
 				return "", fmt.Errorf("value for %s must not be empty", name)
 			}
 			for p := range strings.FieldsSeq(value) {
-				if strings.ContainsRune(p, '%') {
-					// sshd expands % tokens at runtime; not statable here.
+				// sshd expands % tokens at runtime; cannot validate here
+				if strings.EqualFold(p, "none") || strings.ContainsRune(p, '%') {
 					continue
 				}
 				if !filepath.IsAbs(p) {
 					if base == "" {
-						// No config location to resolve against; skip.
-						continue
-					}
-					if strings.EqualFold(p, "none") {
-						// Banner uses "none" to disable the banner; not a path.
 						continue
 					}
 					p = filepath.Join(base, p)
