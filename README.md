@@ -9,21 +9,80 @@ go install github.com/5c077m4n/ssh-config/cmd/sshc@latest
 go install github.com/5c077m4n/ssh-config/cmd/sshdc@latest
 ```
 
-## Usage
+## Usage examples
 
-Client settings use dot notation (`host.key`); the key part is case-insensitive:
+### Client (`sshc`)
 
-```
-sshc 'host1.user' git       # set User git inside the Host host1 block
-sshc 'host1.user'           # print the value for that key
-sshc '*.example.com.user'   # block patterns may contain wildcards
-```
-
-Server settings are flat (`key value`):
+Given this `~/.ssh/config`:
 
 ```
-sshdc permitrootlogin no
-sshdc permitrootlogin
+# personal hosts
+
+Host bastion
+	HostName bastion.example.com
+	User admin
+	Port 22
+
+Host *.lab
+	User deploy
+	ForwardAgent yes
+```
+
+Set `User git` in the `Host bastion` block, then read it back:
+
+```
+$ sshc 'bastion.user' git
+$ sshc 'bastion.user'
+git
+```
+
+Keys and values are case-insensitive — these do the same thing:
+
+```
+$ sshc 'BASTION.Port' 2222
+$ sshc 'bastion.port'
+2222
+```
+
+Wildcards resolve like ssh itself (first match wins):
+
+```
+$ sshc 'db1.lab.forwardagent'
+yes
+```
+
+A setter creates a new `Host` block when no block matches:
+
+```
+$ sshc 'web01.hostname' web01.internal
+$ sshc 'web01.hostname'
+web01.internal
+```
+
+Invalid input is rejected before the file is touched:
+
+```
+$ sshc 'bastion.bogus' yes
+sshc: unknown key "bogus"
+$ sshc 'bastion.port' abc
+sshc: value "abc" for Port must be a positive integer
+```
+
+### Server (`sshdc`)
+
+```
+$ sshdc permitrootlogin no
+$ sshdc permitrootlogin
+no
+$ sshdc maxauthtries 4
+$ sshdc clientaliveinterval 120
+```
+
+Enum and integer values are validated:
+
+```
+$ sshdc permitrootlogin maybe
+sshdc: value "maybe" for PermitRootLogin must be one of yes, no, prohibit-password, forced-commands-only
 ```
 
 ## Validation
