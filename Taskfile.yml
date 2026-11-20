@@ -2,27 +2,30 @@ version: "3"
 
 tasks:
   bump:
-    desc: "Bump latest git tag semver (default: patch) and push. vars: level=patch|minor|major, prefix=v"
+    desc: "Bump latest git tag semver (default: patch) and push. vars: level=patch|minor|major"
     cmds:
-      - bash scripts/bump-tag.sh '{{.level | default "patch"}}' '{{.prefix | default "v"}}'
+      - bash scripts/bump-tag.sh '{{.level | default "patch"}}'
 
   bump:patch:
     desc: Bump patch version (v1.2.3 -> v1.2.4)
     cmds:
       - task: bump
-        vars: { level: patch }
+        vars:
+          level: patch
 
   bump:minor:
     desc: Bump minor version (v1.2.3 -> v1.3.0)
     cmds:
       - task: bump
-        vars: { level: minor }
+        vars:
+          level: minor
 
   bump:major:
     desc: Bump major version (v1.2.3 -> v2.0.0)
     cmds:
       - task: bump
-        vars: { level: major }
+        vars:
+          level: major
 
   tags:
     desc: List git tags

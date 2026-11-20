@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # Bump latest git tag patch semver and push. e.g. v1.2.3 -> v1.2.4
-# Usage: scripts/bump-tag.sh [major|minor|patch] [tag-prefix]
+# Usage: scripts/bump-tag.sh [major|minor|patch]
+#
 set -euo pipefail
 
 level="${1:-patch}"
-prefix="${2:-v}"
+prefix="v"
 
 case "$level" in
 major | minor | patch) ;;
@@ -22,8 +23,7 @@ if [ "$last" = "" ]; then
 else
 	ver="${last#"$prefix"}"
 	IFS='.' read -r major minor patch <<<"$ver"
-	# strip any pre-release/suffix from patch (e.g. 3-rc1 -> 3)
-	patch="${patch%%-*}"
+	patch="${patch%%-*}" # strip any pre-release/suffix from patch (e.g. 3-rc1 -> 3)
 	case "$level" in
 	major)
 		major=$((major + 1))
