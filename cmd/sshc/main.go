@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -19,10 +20,7 @@ func split(addr string) (string, string, error) {
 	return addr[:i], addr[i+1:], nil
 }
 
-func configPath() string {
-	if p := os.Getenv("SSHC_CONFIG"); p != "" {
-		return p
-	}
+func defaultConfigPath() string {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return ".ssh/config"
@@ -69,13 +67,26 @@ func set(path, target, key, value string) int {
 	return 0
 }
 
-func usage() {
-	fmt.Fprintln(os.Stderr, "usage: sshc '[host.]key' [value]")
+func usage(flagSet *flag.FlagSet) {
+	fmt.Fprintln(os.Stderr, "usage: sshc [flags] '[host.]key' [value]")
+	flagSet.PrintDefaults()
 }
 
 func run(args []string) int {
+	flagSet := flag.NewFlagSet("sshc", flag.ContinueOnError)
+	configPath := flagSet.String(
+		"config-path",
+		defaultConfigPath(),
+		"path to the SSH client config",
+	)
+	flagSet.Usage = func() { usage(flagSet) }
+	if err := flagSet.Parse(args); err != nil {
+		return 2
+	}
+	args = flagSet.Args()
+
 	if len(args) == 0 || len(args) > 2 {
-		usage()
+		flagSet.Usage()
 		return 2
 	}
 	target, key, err := split(args[0])
@@ -92,9 +103,9 @@ func run(args []string) int {
 			fmt.Fprintln(os.Stderr, "sshc:", err)
 			return 1
 		}
-		return set(configPath(), target, key, args[1])
+		return set(*configPath, target, key, args[1])
 	}
-	return get(configPath(), target, key)
+	return get(*configPath, target, key)
 }
 
 func main() {

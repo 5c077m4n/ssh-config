@@ -102,6 +102,6 @@ Every getter and setter is validated before the config file is read or written:
   parsed and preserved but never addressable.
 - Server config: getters and setters apply to the main section only; `Match`
   sections are preserved verbatim and never modified.
-- Client config path: `$SSHC_CONFIG` or `~/.ssh/config`. Server config path:
-  `$SSHDC_CONFIG` or `/etc/ssh/sshd_config`.
+- Client config path: `--config-path` flag or `~/.ssh/config`. Server config path:
+  `--config-path` flag or `/etc/ssh/sshd_config`.
 - `Include` directives are not followed.
