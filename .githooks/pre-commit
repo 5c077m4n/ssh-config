@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -euo pipefail
+
+gitleaks git --verbose .
+if [ -n "$(gofmt -l .)" ]; then
+	echo "gofmt needed:" >&2
+	gofmt -l . >&2
+	exit 1
+fi
