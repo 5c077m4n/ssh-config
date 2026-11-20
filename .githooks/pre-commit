@@ -8,3 +8,4 @@ if [ -n "$(gofmt -l .)" ]; then
 	gofmt -l . >&2
 	exit 1
 fi
+zizmor --no-online-audits . || exit 1
