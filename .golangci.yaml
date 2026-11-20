@@ -13,3 +13,7 @@ linters:
           exclude: [""]
           arguments:
             - allowRegex: "^_"
+        - name: package-comments
+          disabled: true
+        - name: exported
+          disabled: true

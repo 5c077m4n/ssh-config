@@ -11,38 +11,6 @@ import (
 	"github.com/5c077m4n/ssh-config/internal/keywords"
 )
 
-func main() {
-	os.Exit(run(os.Args[1:]))
-}
-
-func usage() {
-	fmt.Fprintln(os.Stderr, "usage: sshc '[host.]key' [value]")
-}
-
-func run(args []string) int {
-	if len(args) == 0 || len(args) > 2 {
-		usage()
-		return 2
-	}
-	target, key, err := split(args[0])
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "sshc:", err)
-		return 2
-	}
-	if _, ok := keywords.Canonical(keywords.Client, key); !ok {
-		fmt.Fprintf(os.Stderr, "sshc: unknown key %q\n", key)
-		return 1
-	}
-	if len(args) == 2 {
-		if err := keywords.Validate(keywords.Client, key, args[1]); err != nil {
-			fmt.Fprintln(os.Stderr, "sshc:", err)
-			return 1
-		}
-		return set(configPath(), target, key, args[1])
-	}
-	return get(configPath(), target, key)
-}
-
 func split(addr string) (string, string, error) {
 	i := strings.LastIndex(addr, ".")
 	if i <= 0 {
@@ -99,4 +67,36 @@ func set(path, target, key, value string) int {
 		return 1
 	}
 	return 0
+}
+
+func usage() {
+	fmt.Fprintln(os.Stderr, "usage: sshc '[host.]key' [value]")
+}
+
+func run(args []string) int {
+	if len(args) == 0 || len(args) > 2 {
+		usage()
+		return 2
+	}
+	target, key, err := split(args[0])
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "sshc:", err)
+		return 2
+	}
+	if _, ok := keywords.Canonical(keywords.Client, key); !ok {
+		fmt.Fprintf(os.Stderr, "sshc: unknown key %q\n", key)
+		return 1
+	}
+	if len(args) == 2 {
+		if err := keywords.Validate(keywords.Client, key, args[1]); err != nil {
+			fmt.Fprintln(os.Stderr, "sshc:", err)
+			return 1
+		}
+		return set(configPath(), target, key, args[1])
+	}
+	return get(configPath(), target, key)
+}
+
+func main() {
+	os.Exit(run(os.Args[1:]))
 }

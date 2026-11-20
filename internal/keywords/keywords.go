@@ -49,7 +49,12 @@ func Validate(table map[string]Spec, key, value string) error {
 				return nil
 			}
 		}
-		return fmt.Errorf("value %q for %s must be one of %s", value, spec.Name, strings.Join(spec.Enum, ", "))
+		return fmt.Errorf(
+			"value %q for %s must be one of %s",
+			value,
+			spec.Name,
+			strings.Join(spec.Enum, ", "),
+		)
 	case Uint:
 		n, err := strconv.Atoi(value)
 		if err != nil || n < 1 {

@@ -9,32 +9,8 @@ import (
 	"github.com/5c077m4n/ssh-config/internal/sshdconfig"
 )
 
-func main() {
-	os.Exit(run(os.Args[1:]))
-}
-
 func usage() {
 	fmt.Fprintln(os.Stderr, "usage: sshdc 'key' [value]")
-}
-
-func run(args []string) int {
-	if len(args) == 0 || len(args) > 2 {
-		usage()
-		return 2
-	}
-	key := args[0]
-	if _, ok := keywords.Canonical(keywords.SSHD, key); !ok {
-		fmt.Fprintf(os.Stderr, "sshdc: unknown key %q\n", key)
-		return 1
-	}
-	if len(args) == 2 {
-		if err := keywords.Validate(keywords.SSHD, key, args[1]); err != nil {
-			fmt.Fprintln(os.Stderr, "sshdc:", err)
-			return 1
-		}
-		return set(configPath(), key, args[1])
-	}
-	return get(configPath(), key)
 }
 
 func configPath() string {
@@ -75,4 +51,28 @@ func set(path, key, value string) int {
 		return 1
 	}
 	return 0
+}
+
+func run(args []string) int {
+	if len(args) == 0 || len(args) > 2 {
+		usage()
+		return 2
+	}
+	key := args[0]
+	if _, ok := keywords.Canonical(keywords.SSHD, key); !ok {
+		fmt.Fprintf(os.Stderr, "sshdc: unknown key %q\n", key)
+		return 1
+	}
+	if len(args) == 2 {
+		if err := keywords.Validate(keywords.SSHD, key, args[1]); err != nil {
+			fmt.Fprintln(os.Stderr, "sshdc:", err)
+			return 1
+		}
+		return set(configPath(), key, args[1])
+	}
+	return get(configPath(), key)
+}
+
+func main() {
+	os.Exit(run(os.Args[1:]))
 }

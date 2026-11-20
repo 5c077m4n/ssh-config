@@ -10,42 +10,7 @@ import (
 	"github.com/5c077m4n/ssh-config/internal/keywords"
 )
 
-type Entry struct {
-	Key   string
-	Value string
-	raw   string
-}
-
-type Item struct {
-	Entry *Entry
-	Raw   string
-}
-
-type File struct {
-	Items []Item
-}
-
 var ErrNotFound = errors.New("key not found")
-
-func Parse(data []byte) *File {
-	f := &File{}
-	sc := bufio.NewScanner(bytes.NewReader(data))
-	for sc.Scan() {
-		raw := sc.Text()
-		trimmed := strings.TrimSpace(raw)
-		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
-			f.Items = append(f.Items, Item{Raw: raw})
-			continue
-		}
-		key, value := splitLine(trimmed)
-		if strings.EqualFold(key, "match") {
-			f.Items = append(f.Items, Item{Raw: raw})
-			continue
-		}
-		f.Items = append(f.Items, Item{Entry: &Entry{Key: key, Value: value, raw: raw}})
-	}
-	return f
-}
 
 func splitLine(line string) (string, string) {
 	i := strings.IndexAny(line, " \t=")
@@ -56,9 +21,25 @@ func splitLine(line string) (string, string) {
 	return line[:i], value
 }
 
+type (
+	Entry struct {
+		Key   string
+		Value string
+		raw   string
+	}
+	Item struct {
+		Entry *Entry
+		Raw   string
+	}
+	File struct {
+		Items []Item
+	}
+)
+
 func (f *File) mainEnd() int {
 	for i, it := range f.Items {
-		if it.Entry == nil && strings.HasPrefix(strings.TrimSpace(strings.ToLower(it.Raw)), "match") {
+		if it.Entry == nil &&
+			strings.HasPrefix(strings.TrimSpace(strings.ToLower(it.Raw)), "match") {
 			return i
 		}
 	}
@@ -70,12 +51,15 @@ func (f *File) Serialize() []byte {
 	for _, it := range f.Items {
 		switch {
 		case it.Entry == nil:
-			b.WriteString(it.Raw + "\n")
+			b.WriteString(it.Raw)
 		case it.Entry.raw != "":
-			b.WriteString(it.Entry.raw + "\n")
+			b.WriteString(it.Entry.raw)
 		default:
-			b.WriteString(it.Entry.Key + " " + it.Entry.Value + "\n")
+			b.WriteString(it.Entry.Key)
+			b.WriteString(" ")
+			b.WriteString(it.Entry.Value)
 		}
+		b.WriteString("\n")
 	}
 	return []byte(b.String())
 }
@@ -112,5 +96,26 @@ func (f *File) Set(key, value string) error {
 	}
 	entry := Item{Entry: &Entry{Key: canon, Value: value}}
 	f.Items = append(f.Items[:end], append([]Item{entry}, f.Items[end:]...)...)
+
 	return nil
+}
+
+func Parse(data []byte) *File {
+	f := &File{}
+	sc := bufio.NewScanner(bytes.NewReader(data))
+	for sc.Scan() {
+		raw := sc.Text()
+		trimmed := strings.TrimSpace(raw)
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+			f.Items = append(f.Items, Item{Raw: raw})
+			continue
+		}
+		key, value := splitLine(trimmed)
+		if strings.EqualFold(key, "match") {
+			f.Items = append(f.Items, Item{Raw: raw})
+			continue
+		}
+		f.Items = append(f.Items, Item{Entry: &Entry{Key: key, Value: value, raw: raw}})
+	}
+	return f
 }

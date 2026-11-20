@@ -1,6 +1,7 @@
 # ssh-config
 
-Programmatic SSH configuration via a CLI: `sshc` for the client (`~/.ssh/config`) and `sshdc` for the server (`/etc/ssh/sshd_config`).
+Programmatic SSH configuration via a CLI: `sshc` for the client
+(`~/.ssh/config`) and `sshdc` for the server (`/etc/ssh/sshd_config`).
 
 ## Install
 
@@ -90,11 +91,17 @@ sshdc: value "maybe" for PermitRootLogin must be one of yes, no, prohibit-passwo
 Every getter and setter is validated before the config file is read or written:
 
 - Keys must be known SSH keywords (case-insensitive; unknown keys are rejected).
-- Values are type-checked against the key's kind: `yes`/`no` booleans, enum membership, positive integers, or non-empty strings.
+- Values are type-checked against the key's kind: `yes`/`no` booleans, enum
+  membership, positive integers, or non-empty strings.
 
 ## Behavior notes
 
-- Client config: `host.key` addresses the first `Host` block whose patterns match `host` (first match wins, like ssh). A setter targets a block by exact pattern and creates a new `Host` block when none matches. `Match` blocks are parsed and preserved but never addressable.
-- Server config: getters and setters apply to the main section only; `Match` sections are preserved verbatim and never modified.
-- Client config path: `$SSHC_CONFIG` or `~/.ssh/config`. Server config path: `$SSHDC_CONFIG` or `/etc/ssh/sshd_config`.
+- Client config: `host.key` addresses the first `Host` block whose patterns
+  match `host` (first match wins, like ssh). A setter targets a block by exact
+  pattern and creates a new `Host` block when none matches. `Match` blocks are
+  parsed and preserved but never addressable.
+- Server config: getters and setters apply to the main section only; `Match`
+  sections are preserved verbatim and never modified.
+- Client config path: `$SSHC_CONFIG` or `~/.ssh/config`. Server config path:
+  `$SSHDC_CONFIG` or `/etc/ssh/sshd_config`.
 - `Include` directives are not followed.
