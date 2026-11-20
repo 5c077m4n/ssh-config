@@ -68,7 +68,7 @@ type (
 	}
 )
 
-var clientKeysOrdered = keywords.Names(keywords.Client)
+var clientKeysOrdered = keywords.Client.Names()
 
 func (o *ClientOptions) setField(canon, value string) error {
 	switch canon {
@@ -191,11 +191,11 @@ func (o *ClientOptions) setField(canon, value string) error {
 }
 
 func (o *ClientOptions) Set(key, value string) error {
-	canon, ok := keywords.Canonical(keywords.Client, key)
+	canon, ok := keywords.Client.Canonical(key)
 	if !ok {
 		return fmt.Errorf("unknown key %q", key)
 	}
-	if err := keywords.Validate(keywords.Client, key, value, ""); err != nil {
+	if err := keywords.Client.Validate(key, value, ""); err != nil {
 		return err
 	}
 	return o.setField(canon, value)
@@ -374,7 +374,7 @@ func (f *File) Serialize() []byte {
 }
 
 func (f *File) Get(target, key string) (string, error) {
-	canon, ok := keywords.Canonical(keywords.Client, key)
+	canon, ok := keywords.Client.Canonical(key)
 	if !ok {
 		return "", fmt.Errorf("unknown key %q", key)
 	}
@@ -470,7 +470,7 @@ func Parse(data []byte) *File {
 			f.Blocks = append(f.Blocks, Block{Match: true, Items: []Item{{Raw: raw}}})
 		default:
 			blk := &f.Blocks[len(f.Blocks)-1]
-			if canon, ok := keywords.Canonical(keywords.Client, key); ok {
+			if canon, ok := keywords.Client.Canonical(key); ok {
 				blk.ensureOptions()
 				if _, set := blk.Options.field(canon); set {
 					blk.Items = append(blk.Items, Item{Raw: raw})

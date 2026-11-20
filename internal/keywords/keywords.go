@@ -16,32 +16,32 @@ type (
 		Validate(value string) error
 		ValidateIn(base, value string) error
 	}
-	SpecMap = map[string]Spec
+	SpecMap map[string]Spec
 )
 
-func lookup(table SpecMap, key string) (Spec, bool) {
-	spec, ok := table[strings.ToLower(strings.TrimSpace(key))]
+func (specMap SpecMap) lookup(key string) (Spec, bool) {
+	spec, ok := specMap[strings.ToLower(strings.TrimSpace(key))]
 	return spec, ok
 }
 
-func Canonical(table SpecMap, key string) (string, bool) {
-	if spec, ok := lookup(table, key); ok {
+func (specMap SpecMap) Canonical(key string) (string, bool) {
+	if spec, ok := specMap.lookup(key); ok {
 		return spec.KeywordName(), true
 	}
 	return "", false
 }
 
-func Names(table SpecMap) []string {
-	names := make([]string, 0, len(table))
-	for _, spec := range table {
+func (specMap SpecMap) Names() []string {
+	names := make([]string, 0, len(specMap))
+	for _, spec := range specMap {
 		names = append(names, spec.KeywordName())
 	}
 	sort.Strings(names)
 	return names
 }
 
-func Validate(table SpecMap, key, value, base string) error {
-	spec, ok := lookup(table, key)
+func (specMap SpecMap) Validate(key, value, base string) error {
+	spec, ok := specMap.lookup(key)
 	if !ok {
 		return fmt.Errorf("unknown key %q", key)
 	}
@@ -53,17 +53,17 @@ type typed[T any] struct {
 	parse func(base, value string) (T, error)
 }
 
-func (s typed[T]) KeywordName() string {
-	return s.name
+func (t typed[T]) KeywordName() string {
+	return t.name
 }
 
-func (s typed[T]) Validate(value string) error {
-	_, err := s.parse("", value)
+func (t typed[T]) Validate(value string) error {
+	_, err := t.parse("", value)
 	return err
 }
 
-func (s typed[T]) ValidateIn(base, value string) error {
-	_, err := s.parse(base, value)
+func (t typed[T]) ValidateIn(base, value string) error {
+	_, err := t.parse(base, value)
 	return err
 }
 

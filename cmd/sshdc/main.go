@@ -67,7 +67,7 @@ func run(args []string) int {
 		return 2
 	}
 	key := args[0]
-	if _, ok := keywords.Canonical(keywords.SSHD, key); !ok {
+	if _, ok := keywords.SSHD.Canonical(key); !ok {
 		fmt.Fprintf(os.Stderr, "sshdc: unknown key %q\n", key)
 		return 1
 	}

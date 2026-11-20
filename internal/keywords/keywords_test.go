@@ -17,22 +17,22 @@ func TestValidatePathAuthorizedKeysFile(t *testing.T) {
 	require.NoError(t, os.WriteFile(get, []byte("AuthorizedKeysFile\n"), 0o600))
 
 	// Absolute token-free path that exists is accepted.
-	require.NoError(t, Validate(SSHD, "authorizedkeysfile", existing+" "+get, ""))
+	require.NoError(t, SSHD.Validate("authorizedkeysfile", existing+" "+get, ""))
 
 	// Missing absolute path is rejected.
-	require.Error(t, Validate(SSHD, "authorizedkeysfile", filepath.Join(dir, "missing"), ""))
+	require.Error(t, SSHD.Validate("authorizedkeysfile", filepath.Join(dir, "missing"), ""))
 
 	// Relative paths resolve against the config directory when base is set.
-	require.NoError(t, Validate(SSHD, "authorizedkeysfile", "keys", dir))
-	require.Error(t, Validate(SSHD, "authorizedkeysfile", "missing", dir))
+	require.NoError(t, SSHD.Validate("authorizedkeysfile", "keys", dir))
+	require.Error(t, SSHD.Validate("authorizedkeysfile", "missing", dir))
 
 	// Without base, relative paths cannot be stat-ed; accepted.
-	require.NoError(t, Validate(SSHD, "authorizedkeysfile", "keys", ""))
+	require.NoError(t, SSHD.Validate("authorizedkeysfile", "keys", ""))
 
 	// Token-expanded paths cannot be stat-ed; accepted.
-	require.NoError(t, Validate(SSHD, "authorizedkeysfile", "%h/.ssh/authorized_keys", dir))
-	require.NoError(t, Validate(SSHD, "authorizedkeysfile", "keys/%u keys", dir))
-	require.NoError(t, Validate(SSHD, "authorizedkeysfile", "%%", dir))
+	require.NoError(t, SSHD.Validate("authorizedkeysfile", "%h/.ssh/authorized_keys", dir))
+	require.NoError(t, SSHD.Validate("authorizedkeysfile", "keys/%u keys", dir))
+	require.NoError(t, SSHD.Validate("authorizedkeysfile", "%%", dir))
 }
 
 func TestValidatePathHostKeyBanner(t *testing.T) {
@@ -40,12 +40,12 @@ func TestValidatePathHostKeyBanner(t *testing.T) {
 	hostKey := filepath.Join(key, "ssh_host_key")
 	require.NoError(t, os.WriteFile(hostKey, []byte(""), 0o600))
 
-	require.NoError(t, Validate(SSHD, "hostkey", hostKey, ""))
-	require.Error(t, Validate(SSHD, "hostkey", filepath.Join(key, "missing_key"), ""))
+	require.NoError(t, SSHD.Validate("hostkey", hostKey, ""))
+	require.Error(t, SSHD.Validate("hostkey", filepath.Join(key, "missing_key"), ""))
 
 	// Banner accepts "none" (disables the banner) since it is not an
 	// absolute path sshd would stat.
-	require.NoError(t, Validate(SSHD, "banner", "none", key))
-	require.NoError(t, Validate(SSHD, "banner", hostKey, key))
-	require.Error(t, Validate(SSHD, "banner", filepath.Join(key, "missing_banner"), key))
+	require.NoError(t, SSHD.Validate("banner", "none", key))
+	require.NoError(t, SSHD.Validate("banner", hostKey, key))
+	require.Error(t, SSHD.Validate("banner", filepath.Join(key, "missing_banner"), key))
 }

@@ -94,7 +94,7 @@ func run(args []string) int {
 		fmt.Fprintln(os.Stderr, "sshc:", err)
 		return 2
 	}
-	if _, ok := keywords.Canonical(keywords.Client, key); !ok {
+	if _, ok := keywords.Client.Canonical(key); !ok {
 		fmt.Fprintf(os.Stderr, "sshc: unknown key %q\n", key)
 		return 1
 	}

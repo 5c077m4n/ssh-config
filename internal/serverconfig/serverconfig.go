@@ -55,7 +55,7 @@ type (
 	}
 )
 
-var serverKeysOrdered = keywords.Names(keywords.SSHD)
+var serverKeysOrdered = keywords.SSHD.Names()
 
 func (o *ServerOptions) setField(canon, value string) error {
 	switch canon {
@@ -166,11 +166,11 @@ func (o *ServerOptions) setField(canon, value string) error {
 }
 
 func (o *ServerOptions) Set(key, value, base string) error {
-	canon, ok := keywords.Canonical(keywords.SSHD, key)
+	canon, ok := keywords.SSHD.Canonical(key)
 	if !ok {
 		return fmt.Errorf("unknown key %q", key)
 	}
-	if err := keywords.Validate(keywords.SSHD, key, value, base); err != nil {
+	if err := keywords.SSHD.Validate(key, value, base); err != nil {
 		return err
 	}
 	return o.setField(canon, value)
@@ -281,7 +281,7 @@ func (f *File) Serialize() []byte {
 }
 
 func (f *File) Get(key string) (string, error) {
-	canon, ok := keywords.Canonical(keywords.SSHD, key)
+	canon, ok := keywords.SSHD.Canonical(key)
 	if !ok {
 		return "", fmt.Errorf("unknown key %q", key)
 	}
@@ -351,7 +351,7 @@ func Parse(data []byte) *File {
 			f.Items = append(f.Items, Item{Raw: raw})
 			continue
 		}
-		if canon, ok := keywords.Canonical(keywords.SSHD, key); ok {
+		if canon, ok := keywords.SSHD.Canonical(key); ok {
 			if f.Options == nil {
 				f.Options = &ServerOptions{}
 			}
