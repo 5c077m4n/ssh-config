@@ -3,6 +3,7 @@ package keywords
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -25,6 +26,15 @@ func Canonical(table SpecMap, key string) (string, bool) {
 		return spec.KeywordName(), true
 	}
 	return "", false
+}
+
+func Names(table SpecMap) []string {
+	names := make([]string, 0, len(table))
+	for _, spec := range table {
+		names = append(names, spec.KeywordName())
+	}
+	sort.Strings(names)
+	return names
 }
 
 func Validate(table SpecMap, key, value string) error {

@@ -52,43 +52,9 @@ type (
 		Items   []Item
 		Options *ServerOptions
 	}
-	ServerKey string
 )
 
-var serverKeysOrdered = []ServerKey{
-	"AcceptEnv",
-	"AddressFamily",
-	"AllowAgentForwarding",
-	"AllowGroups",
-	"AllowTCPForwarding",
-	"AllowUsers",
-	"Banner",
-	"ClientAliveCountMax",
-	"ClientAliveInterval",
-	"Compression",
-	"DenyGroups",
-	"DenyUsers",
-	"GSSAPIAuthentication",
-	"HostKey",
-	"KbdInteractiveAuthentication",
-	"ListenAddress",
-	"LogLevel",
-	"MaxAuthTries",
-	"MaxSessions",
-	"PasswordAuthentication",
-	"PermitEmptyPasswords",
-	"PermitRootLogin",
-	"PermitTunnel",
-	"Port",
-	"PubkeyAuthentication",
-	"StrictModes",
-	"Subsystem",
-	"SyslogFacility",
-	"TCPKeepAlive",
-	"UseDNS",
-	"X11DisplayOffset",
-	"X11Forwarding",
-}
+var serverKeysOrdered = keywords.Names(keywords.SSHD)
 
 func (o *ServerOptions) setField(canon, value string) error {
 	switch canon {
@@ -354,11 +320,11 @@ func (f *File) setOption(canon, value string) error {
 // section of the config.
 func (f *File) Set(opts *ServerOptions) error {
 	for _, canon := range serverKeysOrdered {
-		value, ok := opts.field(string(canon))
+		value, ok := opts.field(canon)
 		if !ok {
 			continue
 		}
-		if err := f.setOption(string(canon), value); err != nil {
+		if err := f.setOption(canon, value); err != nil {
 			return err
 		}
 	}

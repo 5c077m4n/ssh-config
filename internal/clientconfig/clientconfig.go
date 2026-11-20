@@ -66,52 +66,9 @@ type (
 	File struct {
 		Blocks []Block
 	}
-	ClientKey string
 )
 
-var clientKeysOrdered = []ClientKey{
-	"AddKeysToAgent",
-	"AddressFamily",
-	"BatchMode",
-	"BindAddress",
-	"BindInterface",
-	"CanonicalizeFallbackLocal",
-	"CanonicalizeHostname",
-	"CheckHostIP",
-	"Compression",
-	"ConnectTimeout",
-	"ControlMaster",
-	"ControlPath",
-	"ForwardAgent",
-	"ForwardX11",
-	"ForwardX11Trusted",
-	"HostKeyAlias",
-	"HostName",
-	"IdentitiesOnly",
-	"IdentityAgent",
-	"IdentityFile",
-	"KbdInteractiveAuthentication",
-	"LocalForward",
-	"LogLevel",
-	"PasswordAuthentication",
-	"Port",
-	"PreferredAuthentications",
-	"ProxyCommand",
-	"ProxyJump",
-	"PubkeyAuthentication",
-	"RemoteForward",
-	"SendEnv",
-	"ServerAliveCountMax",
-	"ServerAliveInterval",
-	"SetEnv",
-	"StrictHostKeyChecking",
-	"TCPKeepAlive",
-	"Tunnel",
-	"UpdateHostKeys",
-	"User",
-	"VerifyHostKeyDNS",
-	"VisualHostKey",
-}
+var clientKeysOrdered = keywords.Names(keywords.Client)
 
 func (o *ClientOptions) setField(canon, value string) error {
 	switch canon {
@@ -480,11 +437,11 @@ func (f *File) setOption(target, canon, value string) error {
 // target. Missing blocks are created.
 func (f *File) Set(target string, opts *ClientOptions) error {
 	for _, canon := range clientKeysOrdered {
-		value, ok := opts.field(string(canon))
+		value, ok := opts.field(canon)
 		if !ok {
 			continue
 		}
-		if err := f.setOption(target, string(canon), value); err != nil {
+		if err := f.setOption(target, canon, value); err != nil {
 			return err
 		}
 	}
