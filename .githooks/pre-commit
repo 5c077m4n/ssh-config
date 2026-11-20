@@ -2,12 +2,15 @@
 
 set -euo pipefail
 
-gitleaks git --verbose .
+go build -v ./... || exit 1
+go test -v ./... || exit 1
 if [ "$(gofmt -l .)" != "" ]; then
 	echo "gofmt needed:" >&2
 	gofmt -l . >&2
+
 	exit 1
 fi
-
 golangci-lint run ./... || exit 1
+
 zizmor --no-online-audits . || exit 1
+gitleaks git --verbose . || exit 1
