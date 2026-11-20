@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/5c077m4n/ssh-config/internal/keywords"
-	"github.com/5c077m4n/ssh-config/internal/sshdconfig"
+	"github.com/5c077m4n/ssh-config/internal/serverconfig"
 )
 
 func usage(fs *flag.FlagSet) {
@@ -25,7 +25,7 @@ func get(path, key string) int {
 		fmt.Fprintln(os.Stderr, "sshdc:", err)
 		return 1
 	}
-	value, err := sshdconfig.Parse(data).Get(key)
+	value, err := serverconfig.Parse(data).Get(key)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "sshdc:", err)
 		return 1
@@ -34,14 +34,14 @@ func get(path, key string) int {
 	return 0
 }
 
-func set(path, key, value string) int {
+func set(path string, opts *serverconfig.ServerOptions) int {
 	data, err := os.ReadFile(path)
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		fmt.Fprintln(os.Stderr, "sshdc:", err)
 		return 1
 	}
-	f := sshdconfig.Parse(data)
-	if err := f.Set(key, value); err != nil {
+	f := serverconfig.Parse(data)
+	if err := f.Set(opts); err != nil {
 		fmt.Fprintln(os.Stderr, "sshdc:", err)
 		return 1
 	}
@@ -71,11 +71,12 @@ func run(args []string) int {
 		return 1
 	}
 	if len(args) == 2 {
-		if err := keywords.Validate(keywords.SSHD, key, args[1]); err != nil {
+		opts := &serverconfig.ServerOptions{}
+		if err := opts.Set(key, args[1]); err != nil {
 			fmt.Fprintln(os.Stderr, "sshdc:", err)
 			return 1
 		}
-		return set(*configPath, key, args[1])
+		return set(*configPath, opts)
 	}
 	return get(*configPath, key)
 }

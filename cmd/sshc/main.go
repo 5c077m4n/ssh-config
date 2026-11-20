@@ -43,14 +43,14 @@ func get(path, target, key string) int {
 	return 0
 }
 
-func set(path, target, key, value string) int {
+func set(path, target string, opts *clientconfig.ClientOptions) int {
 	data, err := os.ReadFile(path)
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		fmt.Fprintln(os.Stderr, "sshc:", err)
 		return 1
 	}
 	f := clientconfig.Parse(data)
-	if err := f.Set(target, key, value); err != nil {
+	if err := f.Set(target, opts); err != nil {
 		fmt.Fprintln(os.Stderr, "sshc:", err)
 		return 1
 	}
@@ -99,11 +99,12 @@ func run(args []string) int {
 		return 1
 	}
 	if len(args) == 2 {
-		if err := keywords.Validate(keywords.Client, key, args[1]); err != nil {
+		opts := &clientconfig.ClientOptions{}
+		if err := opts.Set(key, args[1]); err != nil {
 			fmt.Fprintln(os.Stderr, "sshc:", err)
 			return 1
 		}
-		return set(*configPath, target, key, args[1])
+		return set(*configPath, target, opts)
 	}
 	return get(*configPath, target, key)
 }
