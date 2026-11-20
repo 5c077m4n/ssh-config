@@ -6,3 +6,5 @@
 - Wrap errors with context (`fmt.Errorf` with `%w`); sentinel errors live
   outside functions.
 - No comments unless they explain something the code cannot.
+- Declare functions before using them (callers appear above callees where
+  practical).
