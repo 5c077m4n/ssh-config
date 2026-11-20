@@ -34,7 +34,12 @@ func get(path, target, key string) int {
 		fmt.Fprintln(os.Stderr, "sshc:", err)
 		return 1
 	}
-	value, err := clientconfig.Parse(data).Get(target, key)
+	f := &clientconfig.File{}
+	if err := f.UnmarshalSSH(data); err != nil {
+		fmt.Fprintln(os.Stderr, "sshc:", err)
+		return 1
+	}
+	value, err := f.Get(target, key)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "sshc:", err)
 		return 1
@@ -49,7 +54,11 @@ func set(path, target string, opts *clientconfig.ClientOptions) int {
 		fmt.Fprintln(os.Stderr, "sshc:", err)
 		return 1
 	}
-	f := clientconfig.Parse(data)
+	f := &clientconfig.File{}
+	if err := f.UnmarshalSSH(data); err != nil {
+		fmt.Fprintln(os.Stderr, "sshc:", err)
+		return 1
+	}
 	if err := f.Set(target, opts); err != nil {
 		fmt.Fprintln(os.Stderr, "sshc:", err)
 		return 1
@@ -60,7 +69,12 @@ func set(path, target string, opts *clientconfig.ClientOptions) int {
 			return 1
 		}
 	}
-	if err := os.WriteFile(path, f.Serialize(), 0o600); err != nil {
+	b, err := f.MarshalSSH()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "sshc:", err)
+		return 1
+	}
+	if err := os.WriteFile(path, b, 0o600); err != nil {
 		fmt.Fprintln(os.Stderr, "sshc:", err)
 		return 1
 	}

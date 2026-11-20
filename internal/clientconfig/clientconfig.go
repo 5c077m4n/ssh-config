@@ -352,25 +352,26 @@ func (b *Block) ensureOptions() {
 	}
 }
 
-func (f *File) Serialize() []byte {
-	var b strings.Builder
+func (f *File) MarshalSSH() ([]byte, error) {
+	var b []byte
 	for _, blk := range f.Blocks {
 		for _, it := range blk.Items {
 			if it.Field != "" {
 				if value, ok := blk.Options.field(it.Field); ok {
-					b.WriteString("\t")
-					b.WriteString(it.Field)
-					b.WriteString(" ")
-					b.WriteString(value)
-					b.WriteString("\n")
+					b = append(b, '\t')
+					b = append(b, it.Field...)
+					b = append(b, ' ')
+					b = append(b, value...)
+					b = append(b, '\n')
 				}
 				continue
 			}
-			b.WriteString(it.Raw)
-			b.WriteString("\n")
+			b = append(b, it.Raw...)
+			b = append(b, '\n')
 		}
 	}
-	return []byte(b.String())
+
+	return b, nil
 }
 
 func (f *File) Get(target, key string) (string, error) {
@@ -433,8 +434,6 @@ func (f *File) setOption(target, canon, value string) error {
 	return nil
 }
 
-// Set applies every option configured on opts to the block matching
-// target. Missing blocks are created.
 func (f *File) Set(target string, opts *ClientOptions) error {
 	for _, canon := range clientKeysOrdered {
 		value, ok := opts.field(canon)
@@ -448,8 +447,8 @@ func (f *File) Set(target string, opts *ClientOptions) error {
 	return nil
 }
 
-func Parse(data []byte) *File {
-	f := &File{Blocks: []Block{{}}}
+func (f *File) UnmarshalSSH(data []byte) error {
+	f.Blocks = []Block{{}}
 	sc := bufio.NewScanner(bytes.NewReader(data))
 	for sc.Scan() {
 		raw := sc.Text()
@@ -483,5 +482,5 @@ func Parse(data []byte) *File {
 			}
 		}
 	}
-	return f
+	return nil
 }

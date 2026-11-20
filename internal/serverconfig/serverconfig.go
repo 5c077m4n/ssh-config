@@ -262,22 +262,23 @@ func (f *File) mainEnd() int {
 	return len(f.Items)
 }
 
-func (f *File) Serialize() []byte {
-	var b strings.Builder
+func (f *File) MarshalSSH() ([]byte, error) {
+	var b []byte
 	for _, it := range f.Items {
 		if it.Field != "" {
 			if value, ok := f.Options.field(it.Field); ok {
-				b.WriteString(it.Field)
-				b.WriteString(" ")
-				b.WriteString(value)
-				b.WriteString("\n")
+				b = append(b, it.Field...)
+				b = append(b, ' ')
+				b = append(b, value...)
+				b = append(b, '\n')
 			}
 			continue
 		}
-		b.WriteString(it.Raw)
-		b.WriteString("\n")
+		b = append(b, it.Raw...)
+		b = append(b, '\n')
 	}
-	return []byte(b.String())
+
+	return b, nil
 }
 
 func (f *File) Get(key string) (string, error) {
@@ -321,8 +322,6 @@ func (f *File) setOption(canon, value string) error {
 	return nil
 }
 
-// Set applies every option configured on opts to the main (pre-Match)
-// section of the config.
 func (f *File) Set(opts *ServerOptions) error {
 	for _, canon := range serverKeysOrdered {
 		value, ok := opts.field(canon)
@@ -333,11 +332,11 @@ func (f *File) Set(opts *ServerOptions) error {
 			return err
 		}
 	}
+
 	return nil
 }
 
-func Parse(data []byte) *File {
-	f := &File{}
+func (f *File) UnmarshalSSH(data []byte) error {
 	sc := bufio.NewScanner(bytes.NewReader(data))
 	for sc.Scan() {
 		raw := sc.Text()
@@ -365,5 +364,6 @@ func Parse(data []byte) *File {
 			f.Items = append(f.Items, Item{Raw: raw})
 		}
 	}
-	return f
+
+	return nil
 }

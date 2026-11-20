@@ -26,7 +26,12 @@ func get(path, key string) int {
 		fmt.Fprintln(os.Stderr, "sshdc:", err)
 		return 1
 	}
-	value, err := serverconfig.Parse(data).Get(key)
+	f := &serverconfig.File{}
+	if err := f.UnmarshalSSH(data); err != nil {
+		fmt.Fprintln(os.Stderr, "sshdc:", err)
+		return 1
+	}
+	value, err := f.Get(key)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "sshdc:", err)
 		return 1
@@ -41,12 +46,21 @@ func set(path string, opts *serverconfig.ServerOptions) int {
 		fmt.Fprintln(os.Stderr, "sshdc:", err)
 		return 1
 	}
-	f := serverconfig.Parse(data)
+	f := &serverconfig.File{}
+	if err := f.UnmarshalSSH(data); err != nil {
+		fmt.Fprintln(os.Stderr, "sshdc:", err)
+		return 1
+	}
 	if err := f.Set(opts); err != nil {
 		fmt.Fprintln(os.Stderr, "sshdc:", err)
 		return 1
 	}
-	if err := os.WriteFile(path, f.Serialize(), 0o600); err != nil {
+	b, err := f.MarshalSSH()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "sshdc:", err)
+		return 1
+	}
+	if err := os.WriteFile(path, b, 0o600); err != nil {
 		fmt.Fprintln(os.Stderr, "sshdc:", err)
 		return 1
 	}
