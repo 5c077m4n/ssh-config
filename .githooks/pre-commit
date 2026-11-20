@@ -3,10 +3,11 @@
 set -euo pipefail
 
 gitleaks git --verbose .
-if [ -n "$(gofmt -l .)" ]; then
+if [ "$(gofmt -l .)" != "" ]; then
 	echo "gofmt needed:" >&2
 	gofmt -l . >&2
 	exit 1
 fi
+
 golangci-lint run ./... || exit 1
 zizmor --no-online-audits . || exit 1
