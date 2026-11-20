@@ -89,7 +89,7 @@ func Str(name string) Spec {
 	}
 }
 
-func Enum(name string, allowed ...string) Spec {
+func Enum(name string, allowed []string) Spec {
 	return typed[string]{
 		name: name,
 		parse: func(value string) (string, error) {
