@@ -1,3 +1,4 @@
+// Package clientconfig for mamanging the client's config
 package clientconfig
 
 import (

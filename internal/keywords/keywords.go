@@ -1,3 +1,4 @@
+// Package keywords for the config options
 package keywords
 
 import (
