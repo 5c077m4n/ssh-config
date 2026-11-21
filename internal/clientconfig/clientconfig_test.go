@@ -166,7 +166,8 @@ func TestUseKeyChainAddsIgnoreUnknown(t *testing.T) {
 `)
 
 	out := marshal(t, f)
-	require.Equal(t, `	IgnoreUnknown UseKeychain
+	require.Equal(t, `IgnoreUnknown UseKeychain
+
 Host bastion
 	UseKeyChain yes
 `, out)
@@ -178,7 +179,8 @@ func TestUseKeyChainExistingIgnoreUnknown(t *testing.T) {
 	UseKeyChain yes
 `)
 
-	require.Equal(t, `	IgnoreUnknown UseKeychain
+	require.Equal(t, `IgnoreUnknown UseKeychain
+
 Host bastion
 	UseKeyChain yes
 `, marshal(t, f))
@@ -190,7 +192,7 @@ func TestUseKeyChainSetAddsIgnoreUnknown(t *testing.T) {
 	require.NoError(t, f.Set("host1", opts(t, "usekeychain", "yes")))
 
 	out := marshal(t, f)
-	require.Contains(t, out, "	IgnoreUnknown UseKeychain\n")
+	require.Contains(t, out, "IgnoreUnknown UseKeychain\n\n")
 	require.Contains(t, out, "	UseKeyChain yes\n")
 	require.Equal(t, "UseKeychain", strings.Join(f.IgnoreUnknown, ","))
 }
@@ -204,7 +206,8 @@ Host bastion
 `)
 
 	require.Equal(t, []string{"FooBar", "UseKeychain"}, f.IgnoreUnknown)
-	require.Equal(t, `	IgnoreUnknown FooBar,UseKeychain
+	require.Equal(t, `IgnoreUnknown FooBar,UseKeychain
+
 
 Host bastion
 	UseKeyChain yes
@@ -227,5 +230,5 @@ func TestIgnoreUnknownSetGlobal(t *testing.T) {
 	require.NoError(t, f.Set("host1", opts(t, "ignoreunknown", "FooBar")))
 
 	require.Equal(t, []string{"FooBar"}, f.IgnoreUnknown)
-	require.Contains(t, marshal(t, f), "	IgnoreUnknown FooBar\n# personal hosts\n")
+	require.Contains(t, marshal(t, f), "IgnoreUnknown FooBar\n\n# personal hosts\n")
 }

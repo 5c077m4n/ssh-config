@@ -412,7 +412,7 @@ func (f *File) MarshalSSH() ([]byte, error) {
 		}
 	}
 	if len(ignoreUnknown) > 0 {
-		b = append(b, "\tIgnoreUnknown "+strings.Join(ignoreUnknown, ",")+"\n"...)
+		b = append(b, "IgnoreUnknown "+strings.Join(ignoreUnknown, ",")+"\n\n"...)
 	}
 
 	for _, blk := range f.Blocks {
