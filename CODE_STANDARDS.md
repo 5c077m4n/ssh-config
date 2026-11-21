@@ -1,5 +1,7 @@
 # Code Standards
 
+- Use full descriptive variable names; no single-letter names (except
+  conventional receivers/indices like `i`, `j`).
 - Run `gofmt`/`go vet ./...` before committing; formatting is tool-enforced.
 - Use testify (`require`/`assert`) in tests.
 - Prefer explicit `any` over `interface{}`.
