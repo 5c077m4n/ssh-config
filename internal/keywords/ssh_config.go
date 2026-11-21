@@ -24,6 +24,7 @@ var Client = SpecMap{
 	"identitiesonly":               Bool("IdentitiesOnly"),
 	"identityagent":                Str("IdentityAgent"),
 	"identityfile":                 Str("IdentityFile"),
+	"ignoreunknown":                Str("IgnoreUnknown"),
 	"kbdinteractiveauthentication": Bool("KbdInteractiveAuthentication"),
 	"localforward":                 Str("LocalForward"),
 	"loglevel": Enum("LogLevel", []string{
@@ -58,6 +59,7 @@ var Client = SpecMap{
 	"tcpkeepalive":     Bool("TCPKeepAlive"),
 	"tunnel":           Enum("Tunnel", []string{"yes", "no", "point-to-point", "ethernet"}),
 	"updatehostkeys":   Bool("UpdateHostKeys"),
+	"usekeychain":      Bool("UseKeyChain"),
 	"user":             Str("User"),
 	"verifyhostkeydns": Enum("VerifyHostKeyDNS", []string{"yes", "no", "ask"}),
 	"visualhostkey":    Bool("VisualHostKey"),

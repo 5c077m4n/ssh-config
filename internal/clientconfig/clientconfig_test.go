@@ -1,6 +1,7 @@
 package clientconfig
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -157,4 +158,74 @@ func TestMatchBlocksUntouched(t *testing.T) {
 	require.Contains(t, out, "Match host bastion")
 	require.Contains(t, out, "# inside match")
 	require.Contains(t, out, "Host bastion")
+}
+
+func TestUseKeyChainAddsIgnoreUnknown(t *testing.T) {
+	f := mustParse(t, `Host bastion
+	UseKeyChain yes
+`)
+
+	out := marshal(t, f)
+	require.Equal(t, `	IgnoreUnknown UseKeychain
+Host bastion
+	UseKeyChain yes
+`, out)
+}
+
+func TestUseKeyChainExistingIgnoreUnknown(t *testing.T) {
+	f := mustParse(t, `Host bastion
+	IgnoreUnknown UseKeychain
+	UseKeyChain yes
+`)
+
+	require.Equal(t, `	IgnoreUnknown UseKeychain
+Host bastion
+	UseKeyChain yes
+`, marshal(t, f))
+}
+
+func TestUseKeyChainSetAddsIgnoreUnknown(t *testing.T) {
+	f := mustParse(t, sample)
+
+	require.NoError(t, f.Set("host1", opts(t, "usekeychain", "yes")))
+
+	out := marshal(t, f)
+	require.Contains(t, out, "	IgnoreUnknown UseKeychain\n")
+	require.Contains(t, out, "	UseKeyChain yes\n")
+	require.Equal(t, "UseKeychain", strings.Join(f.IgnoreUnknown, ","))
+}
+
+func TestIgnoreUnknownMergesLines(t *testing.T) {
+	f := mustParse(t, `IgnoreUnknown FooBar
+
+Host bastion
+	IgnoreUnknown UseKeychain,FooBar
+	UseKeyChain yes
+`)
+
+	require.Equal(t, []string{"FooBar", "UseKeychain"}, f.IgnoreUnknown)
+	require.Equal(t, `	IgnoreUnknown FooBar,UseKeychain
+
+Host bastion
+	UseKeyChain yes
+`, marshal(t, f))
+}
+
+func TestIgnoreUnknownGetSet(t *testing.T) {
+	f := mustParse(t, `Host bastion
+	IgnoreUnknown UseKeychain,FooBar
+`)
+
+	value, err := f.Get("bastion", "ignoreunknown")
+	require.NoError(t, err)
+	require.Equal(t, "UseKeychain,FooBar", value)
+}
+
+func TestIgnoreUnknownSetGlobal(t *testing.T) {
+	f := mustParse(t, sample)
+
+	require.NoError(t, f.Set("host1", opts(t, "ignoreunknown", "FooBar")))
+
+	require.Equal(t, []string{"FooBar"}, f.IgnoreUnknown)
+	require.Contains(t, marshal(t, f), "	IgnoreUnknown FooBar\n# personal hosts\n")
 }

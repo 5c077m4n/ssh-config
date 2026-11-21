@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 
@@ -34,6 +35,7 @@ type (
 		IdentitiesOnly               *bool
 		IdentityAgent                string
 		IdentityFile                 string
+		IgnoreUnknown                string
 		KbdInteractiveAuthentication *bool
 		LocalForward                 string
 		LogLevel                     string
@@ -52,6 +54,7 @@ type (
 		TCPKeepAlive                 *bool
 		Tunnel                       string
 		UpdateHostKeys               *bool
+		UseKeyChain                  *bool
 		User                         string
 		VerifyHostKeyDNS             string
 		VisualHostKey                *bool
@@ -64,7 +67,8 @@ type (
 		Options  *ClientOptions
 	}
 	File struct {
-		Blocks []Block
+		Blocks        []Block
+		IgnoreUnknown []string
 	}
 )
 
@@ -124,6 +128,8 @@ func (o *ClientOptions) setField(canon, value string) error {
 		o.IdentityAgent = value
 	case "IdentityFile":
 		o.IdentityFile = value
+	case "IgnoreUnknown":
+		o.IgnoreUnknown = value
 	case "KbdInteractiveAuthentication":
 		b := strings.EqualFold(value, "yes")
 		o.KbdInteractiveAuthentication = &b
@@ -177,6 +183,9 @@ func (o *ClientOptions) setField(canon, value string) error {
 	case "UpdateHostKeys":
 		b := strings.EqualFold(value, "yes")
 		o.UpdateHostKeys = &b
+	case "UseKeyChain":
+		b := strings.EqualFold(value, "yes")
+		o.UseKeyChain = &b
 	case "User":
 		o.User = value
 	case "VerifyHostKeyDNS":
@@ -246,6 +255,8 @@ func (o *ClientOptions) field(canon string) (string, bool) {
 		return utils.NonEmpty(o.IdentityAgent)
 	case "IdentityFile":
 		return utils.NonEmpty(o.IdentityFile)
+	case "IgnoreUnknown":
+		return utils.NonEmpty(o.IgnoreUnknown)
 	case "KbdInteractiveAuthentication":
 		return utils.BoolField(o.KbdInteractiveAuthentication)
 	case "LocalForward":
@@ -282,6 +293,8 @@ func (o *ClientOptions) field(canon string) (string, bool) {
 		return utils.NonEmpty(o.Tunnel)
 	case "UpdateHostKeys":
 		return utils.BoolField(o.UpdateHostKeys)
+	case "UseKeyChain":
+		return utils.BoolField(o.UseKeyChain)
 	case "User":
 		return utils.NonEmpty(o.User)
 	case "VerifyHostKeyDNS":
@@ -352,11 +365,62 @@ func (b *Block) ensureOptions() {
 	}
 }
 
+// addIgnoreUnknown appends tokens to the global IgnoreUnknown list,
+// skipping duplicates (case-insensitive).
+func (f *File) addIgnoreUnknown(value string) {
+	for name := range strings.SplitSeq(value, ",") {
+		name = strings.TrimSpace(name)
+		if name == "" {
+			continue
+		}
+
+		known := false
+		for _, existing := range f.IgnoreUnknown {
+			if strings.EqualFold(existing, name) {
+				known = true
+				break
+			}
+		}
+		if !known {
+			f.IgnoreUnknown = append(f.IgnoreUnknown, name)
+		}
+	}
+}
+
+func containsIgnoreUnknown(list []string, name string) bool {
+	for _, existing := range list {
+		if strings.EqualFold(existing, name) {
+			return true
+		}
+	}
+	return false
+}
+
 func (f *File) MarshalSSH() ([]byte, error) {
 	var b []byte
+
+	ignoreUnknown := f.IgnoreUnknown
+	for _, blk := range f.Blocks {
+		if blk.Options == nil {
+			continue
+		}
+		if _, ok := blk.Options.field("UseKeyChain"); ok {
+			if !containsIgnoreUnknown(ignoreUnknown, "UseKeychain") {
+				ignoreUnknown = append(append([]string{}, ignoreUnknown...), "UseKeychain")
+			}
+			break
+		}
+	}
+	if len(ignoreUnknown) > 0 {
+		b = append(b, "\tIgnoreUnknown "+strings.Join(ignoreUnknown, ",")+"\n"...)
+	}
+
 	for _, blk := range f.Blocks {
 		for _, it := range blk.Items {
 			if it.Field != "" {
+				if it.Field == "IgnoreUnknown" {
+					continue
+				}
 				if value, ok := blk.Options.field(it.Field); ok {
 					b = append(b, '\t')
 					b = append(b, it.Field...)
@@ -379,6 +443,14 @@ func (f *File) Get(target, key string) (string, error) {
 	if !ok {
 		return "", fmt.Errorf("unknown key %q", key)
 	}
+
+	if canon == "IgnoreUnknown" {
+		if len(f.IgnoreUnknown) == 0 {
+			return "", fmt.Errorf("%w: %s in %s", utils.ErrNotFound, canon, target)
+		}
+		return strings.Join(f.IgnoreUnknown, ","), nil
+	}
+
 	for _, blk := range f.Blocks {
 		if blk.Match || !blk.matches(target) {
 			continue
@@ -396,6 +468,13 @@ func (f *File) Get(target, key string) (string, error) {
 }
 
 func (f *File) setOption(target, canon, value string) error {
+	if canon == "IgnoreUnknown" {
+		f.addIgnoreUnknown(value)
+		return nil
+	}
+	if canon == "UseKeyChain" {
+		f.addIgnoreUnknown("UseKeychain")
+	}
 	for bi := range f.Blocks {
 		blk := &f.Blocks[bi]
 		if blk.Match || !containsPattern(blk.Patterns, target) {
@@ -460,6 +539,9 @@ func (f *File) UnmarshalSSH(data []byte) error {
 		}
 		key, value := utils.SplitLine(trimmed)
 		switch strings.ToLower(key) {
+		case "ignoreunknown":
+			// Global config, hoisted out of any block.
+			f.addIgnoreUnknown(value)
 		case "host":
 			f.Blocks = append(
 				f.Blocks,
@@ -478,6 +560,11 @@ func (f *File) UnmarshalSSH(data []byte) error {
 					blk.Items = append(blk.Items, Item{Field: canon})
 				}
 			} else {
+				slog.Warn(
+					"unknown field, keeping as-is",
+					"field", key,
+					"block", strings.Join(blk.Patterns, " "),
+				)
 				blk.Items = append(blk.Items, Item{Raw: raw})
 			}
 		}
