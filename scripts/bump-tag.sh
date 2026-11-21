@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Bump latest git tag patch semver and push. e.g. v1.2.3 -> v1.2.4
 # Usage: scripts/bump-tag.sh [major|minor|patch]
-#
+
 set -euo pipefail
 
 level="${1:-patch}"
