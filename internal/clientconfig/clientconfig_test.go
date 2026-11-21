@@ -1,7 +1,6 @@
 package clientconfig
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -194,7 +193,7 @@ func TestUseKeyChainSetAddsIgnoreUnknown(t *testing.T) {
 	out := marshal(t, f)
 	require.Contains(t, out, "IgnoreUnknown UseKeychain\n\n")
 	require.Contains(t, out, "	UseKeyChain yes\n")
-	require.Equal(t, "UseKeychain", strings.Join(f.IgnoreUnknown, ","))
+	require.Equal(t, map[string]string{"usekeychain": "UseKeychain"}, f.IgnoreUnknown)
 }
 
 func TestIgnoreUnknownMergesLines(t *testing.T) {
@@ -205,9 +204,12 @@ Host bastion
 	UseKeyChain yes
 `)
 
-	require.Equal(t, []string{"FooBar", "UseKeychain"}, f.IgnoreUnknown)
+	require.Equal(
+		t,
+		map[string]string{"foobar": "FooBar", "usekeychain": "UseKeychain"},
+		f.IgnoreUnknown,
+	)
 	require.Equal(t, `IgnoreUnknown FooBar,UseKeychain
-
 
 Host bastion
 	UseKeyChain yes
@@ -221,7 +223,7 @@ func TestIgnoreUnknownGetSet(t *testing.T) {
 
 	value, err := f.Get("bastion", "ignoreunknown")
 	require.NoError(t, err)
-	require.Equal(t, "UseKeychain,FooBar", value)
+	require.Equal(t, "FooBar,UseKeychain", value)
 }
 
 func TestIgnoreUnknownSetGlobal(t *testing.T) {
@@ -229,6 +231,27 @@ func TestIgnoreUnknownSetGlobal(t *testing.T) {
 
 	require.NoError(t, f.Set("host1", opts(t, "ignoreunknown", "FooBar")))
 
-	require.Equal(t, []string{"FooBar"}, f.IgnoreUnknown)
+	require.Equal(t, map[string]string{"foobar": "FooBar"}, f.IgnoreUnknown)
 	require.Contains(t, marshal(t, f), "IgnoreUnknown FooBar\n\n# personal hosts\n")
+}
+
+func TestIgnoreUnknownRoundTripStable(t *testing.T) {
+	f := mustParse(
+		t,
+		"IgnoreUnknown UseKeychain\n\n# personal hosts\n\nHost host1\n\tHostName host1.example.com\n",
+	)
+
+	var out []byte
+	for i := 0; i < 5; i++ {
+		data, err := f.MarshalSSH()
+		require.NoError(t, err)
+		out = data
+		require.NoError(t, f.UnmarshalSSH(out))
+	}
+
+	require.Equal(
+		t,
+		"IgnoreUnknown UseKeychain\n\n# personal hosts\n\nHost host1\n\tHostName host1.example.com\n",
+		string(out),
+	)
 }

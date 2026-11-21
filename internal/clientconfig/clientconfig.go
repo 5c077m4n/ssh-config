@@ -6,6 +6,8 @@ import (
 	"bytes"
 	"fmt"
 	"log/slog"
+	"maps"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -67,8 +69,9 @@ type (
 		Options  *ClientOptions
 	}
 	File struct {
-		Blocks        []Block
-		IgnoreUnknown []string
+		Blocks []Block
+		// IgnoreUnknown maps lowercased names to their original casing.
+		IgnoreUnknown map[string]string
 	}
 )
 
@@ -365,48 +368,43 @@ func (b *Block) ensureOptions() {
 	}
 }
 
-// addIgnoreUnknown appends tokens to the global IgnoreUnknown list,
-// skipping duplicates (case-insensitive).
 func (f *File) addIgnoreUnknown(value string) {
+	if f.IgnoreUnknown == nil {
+		f.IgnoreUnknown = make(map[string]string)
+	}
+
 	for name := range strings.SplitSeq(value, ",") {
 		name = strings.TrimSpace(name)
 		if name == "" {
 			continue
 		}
-
-		known := false
-		for _, existing := range f.IgnoreUnknown {
-			if strings.EqualFold(existing, name) {
-				known = true
-				break
-			}
-		}
-		if !known {
-			f.IgnoreUnknown = append(f.IgnoreUnknown, name)
+		key := strings.ToLower(name)
+		if _, ok := f.IgnoreUnknown[key]; !ok {
+			f.IgnoreUnknown[key] = name
 		}
 	}
 }
 
-func containsIgnoreUnknown(list []string, name string) bool {
-	for _, existing := range list {
-		if strings.EqualFold(existing, name) {
-			return true
-		}
+func sortedIgnoreUnknown(m map[string]string) []string {
+	keys := slices.Sorted(maps.Keys(m))
+	out := make([]string, 0, len(keys))
+	for _, key := range keys {
+		out = append(out, m[key])
 	}
-	return false
+	return out
 }
 
 func (f *File) MarshalSSH() ([]byte, error) {
 	var b []byte
 
-	ignoreUnknown := f.IgnoreUnknown
+	ignoreUnknown := sortedIgnoreUnknown(f.IgnoreUnknown)
 	for _, blk := range f.Blocks {
 		if blk.Options == nil {
 			continue
 		}
 		if _, ok := blk.Options.field("UseKeyChain"); ok {
-			if !containsIgnoreUnknown(ignoreUnknown, "UseKeychain") {
-				ignoreUnknown = append(append([]string{}, ignoreUnknown...), "UseKeychain")
+			if _, ok := f.IgnoreUnknown["usekeychain"]; !ok {
+				ignoreUnknown = append(ignoreUnknown, "UseKeychain")
 			}
 			break
 		}
@@ -448,7 +446,7 @@ func (f *File) Get(target, key string) (string, error) {
 		if len(f.IgnoreUnknown) == 0 {
 			return "", fmt.Errorf("%w: %s in %s", utils.ErrNotFound, canon, target)
 		}
-		return strings.Join(f.IgnoreUnknown, ","), nil
+		return strings.Join(sortedIgnoreUnknown(f.IgnoreUnknown), ","), nil
 	}
 
 	for _, blk := range f.Blocks {
@@ -528,11 +526,24 @@ func (f *File) Set(target string, opts *ClientOptions) error {
 
 func (f *File) UnmarshalSSH(data []byte) error {
 	f.Blocks = []Block{{}}
+	// MarshalSSH writes exactly one blank line after the hoisted
+	// IgnoreUnknown line. Skip blank lines that immediately follow it so
+	// repeated parse/marshal round-trips do not accumulate blank lines.
+	skipBlank := false
 	sc := bufio.NewScanner(bytes.NewReader(data))
 	for sc.Scan() {
 		raw := sc.Text()
 		trimmed := strings.TrimSpace(raw)
-		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+		if trimmed == "" {
+			if skipBlank {
+				continue
+			}
+			blk := &f.Blocks[len(f.Blocks)-1]
+			blk.Items = append(blk.Items, Item{Raw: raw})
+			continue
+		}
+		if strings.HasPrefix(trimmed, "#") {
+			skipBlank = false
 			blk := &f.Blocks[len(f.Blocks)-1]
 			blk.Items = append(blk.Items, Item{Raw: raw})
 			continue
@@ -542,14 +553,18 @@ func (f *File) UnmarshalSSH(data []byte) error {
 		case "ignoreunknown":
 			// Global config, hoisted out of any block.
 			f.addIgnoreUnknown(value)
+			skipBlank = true
 		case "host":
+			skipBlank = false
 			f.Blocks = append(
 				f.Blocks,
 				Block{Patterns: strings.Fields(value), Items: []Item{{Raw: raw}}},
 			)
 		case "match":
+			skipBlank = false
 			f.Blocks = append(f.Blocks, Block{Match: true, Items: []Item{{Raw: raw}}})
 		default:
+			skipBlank = false
 			blk := &f.Blocks[len(f.Blocks)-1]
 			if canon, ok := keywords.Client.Canonical(key); ok {
 				blk.ensureOptions()
