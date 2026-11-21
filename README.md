@@ -6,8 +6,8 @@ Programmatic SSH configuration via a CLI: `sshc` for the client
 ## Install
 
 ```bash
-go install github.com/5c077m4n/ssh-config/cmd/sshc@latest
-go install github.com/5c077m4n/ssh-config/cmd/sshdc@latest
+go run github.com/5c077m4n/ssh-config/cmd/sshc@latest
+go run github.com/5c077m4n/ssh-config/cmd/sshdc@latest
 ```
 
 ## Usage examples
