@@ -3,13 +3,6 @@
 Programmatic SSH configuration via a CLI: `sshc` for the client
 (`~/.ssh/config`) and `sshdc` for the server (`/etc/ssh/sshd_config`).
 
-## Install
-
-```bash
-go install github.com/5c077m4n/ssh-config/cmd/sshc@latest
-go install github.com/5c077m4n/ssh-config/cmd/sshdc@latest
-```
-
 ## Usage examples
 
 ### Client (`sshc`)
@@ -32,57 +25,57 @@ Host *.lab
 Set `User git` in the `Host bastion` block, then read it back:
 
 ```console
-$ sshc 'bastion.user' git
-$ sshc 'bastion.user'
+$ go run github.com/5c077m4n/ssh-config/cmd/sshc@latest 'bastion.user' git
+$ go run github.com/5c077m4n/ssh-config/cmd/sshc@latest 'bastion.user'
 git
 ```
 
 Keys and values are case-insensitive — these do the same thing:
 
 ```console
-$ sshc 'BASTION.Port' 2222
-$ sshc 'bastion.port'
+$ go run github.com/5c077m4n/ssh-config/cmd/sshc@latest 'BASTION.Port' 2222
+$ go run github.com/5c077m4n/ssh-config/cmd/sshc@latest 'bastion.port'
 2222
 ```
 
 Wildcards resolve like ssh itself (first match wins):
 
 ```console
-$ sshc 'db1.lab.forwardagent'
+$ go run github.com/5c077m4n/ssh-config/cmd/sshc@latest 'db1.lab.forwardagent'
 yes
 ```
 
 A setter creates a new `Host` block when no block matches:
 
 ```console
-$ sshc 'web01.hostname' web01.internal
-$ sshc 'web01.hostname'
+$ go run github.com/5c077m4n/ssh-config/cmd/sshc@latest 'web01.hostname' web01.internal
+$ go run github.com/5c077m4n/ssh-config/cmd/sshc@latest 'web01.hostname'
 web01.internal
 ```
 
 Invalid input is rejected before the file is touched:
 
 ```console
-$ sshc 'bastion.bogus' yes
+$ go run github.com/5c077m4n/ssh-config/cmd/sshc@latest 'bastion.bogus' yes
 sshc: unknown key "bogus"
-$ sshc 'bastion.port' abc
+$ go run github.com/5c077m4n/ssh-config/cmd/sshc@latest 'bastion.port' abc
 sshc: value "abc" for Port must be a positive integer
 ```
 
 ### Server (`sshdc`)
 
 ```console
-$ sshdc permitrootlogin no
-$ sshdc permitrootlogin
+$ go run github.com/5c077m4n/ssh-config/cmd/sshdc@latest permitrootlogin no
+$ go run github.com/5c077m4n/ssh-config/cmd/sshdc@latest permitrootlogin
 no
-$ sshdc maxauthtries 4
-$ sshdc clientaliveinterval 120
+$ go run github.com/5c077m4n/ssh-config/cmd/sshdc@latest maxauthtries 4
+$ go run github.com/5c077m4n/ssh-config/cmd/sshdc@latest clientaliveinterval 120
 ```
 
 Enum and integer values are validated:
 
 ```console
-$ sshdc permitrootlogin maybe
+$ go run github.com/5c077m4n/ssh-config/cmd/sshdc@latest permitrootlogin maybe
 sshdc: value "maybe" for PermitRootLogin must be one of yes, no, prohibit-password, forced-commands-only
 ```
 
