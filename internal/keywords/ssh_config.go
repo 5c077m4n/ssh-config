@@ -23,7 +23,7 @@ var Client = SpecMap{
 	"hostname":                     Str("HostName"),
 	"identitiesonly":               Bool("IdentitiesOnly"),
 	"identityagent":                Str("IdentityAgent"),
-	"identityfile":                 Str("IdentityFile"),
+	"identityfile":                 Path("IdentityFile"),
 	"ignoreunknown":                Str("IgnoreUnknown"),
 	"kbdinteractiveauthentication": Bool("KbdInteractiveAuthentication"),
 	"localforward":                 Str("LocalForward"),
