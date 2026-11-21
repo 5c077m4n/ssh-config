@@ -475,27 +475,27 @@ func (f *File) setOption(target, canon, value string) error {
 	if canon == "UseKeyChain" {
 		f.addIgnoreUnknown("UseKeychain")
 	}
-	for bi := range f.Blocks {
-		blk := &f.Blocks[bi]
-		if blk.Match || !containsPattern(blk.Patterns, target) {
+	for block := range f.Blocks {
+		blockContent := &f.Blocks[block]
+		if blockContent.Match || !containsPattern(blockContent.Patterns, target) {
 			continue
 		}
-		blk.ensureOptions()
-		if err := blk.Options.setField(canon, value); err != nil {
+		blockContent.ensureOptions()
+		if err := blockContent.Options.setField(canon, value); err != nil {
 			return err
 		}
-		for ii := range blk.Items {
-			if blk.Items[ii].Field == canon {
+		for blockItem := range blockContent.Items {
+			if blockContent.Items[blockItem].Field == canon {
 				return nil
 			}
 		}
-		for ii := range blk.Items {
-			if utils.CommentKey(blk.Items[ii].Raw) == canon {
-				blk.Items[ii] = Item{Field: canon}
+		for blockItem := range blockContent.Items {
+			if utils.CommentKey(blockContent.Items[blockItem].Raw) == canon {
+				blockContent.Items[blockItem] = Item{Field: canon}
 				return nil
 			}
 		}
-		blk.Items = append(blk.Items, Item{Field: canon})
+		blockContent.Items = append(blockContent.Items, Item{Field: canon})
 		return nil
 	}
 	blockOptions := &ClientOptions{}
